@@ -1,8 +1,8 @@
 """
 ╔══════════════════════════════════════════════════════════════════════╗
-║   NextStep AI — Your Smart Career Guide to the Next Step            ║
-║   Quiz → ML Prediction → Roadmap → Mentor → Resume Analyzer         ║
-║   Built with Streamlit · scikit-learn · Zero External APIs           ║
+║  NextStep AI — Your Smart Career Guide to the Next Step             ║
+║  Features: Quiz · ML Prediction · Roadmap · Mentor · Resume Scan    ║
+║  Model   : career_model.pkl  |  No external APIs                    ║
 ╚══════════════════════════════════════════════════════════════════════╝
 """
 
@@ -10,7 +10,9 @@ import os, re, time, pickle
 import numpy as np
 import streamlit as st
 
-# ── PAGE CONFIG ────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# PAGE CONFIG  (must be the very first Streamlit call)
+# ─────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="NextStep AI",
     page_icon="◈",
@@ -20,48 +22,45 @@ st.set_page_config(
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# ══════════════════════════════════════════════════════════════════════
-# GLOBAL CSS  — Dark navy/purple glassmorphism theme
-# ══════════════════════════════════════════════════════════════════════
-def inject_css():
+# ═════════════════════════════════════════════════════════════
+# GLOBAL CSS
+# ═════════════════════════════════════════════════════════════
+def inject_css() -> None:
     st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Satoshi:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap');
 
-/* ── Reset & tokens ── */
-*, *::before, *::after { box-sizing: border-box; }
+/* ── Design tokens ── */
 :root {
-  --navy:      #05070F;
-  --navy2:     #080C18;
-  --navy3:     #0E1428;
-  --navy4:     #141D35;
-  --glass:     rgba(255,255,255,0.04);
-  --glass-hi:  rgba(255,255,255,0.08);
-  --border:    rgba(255,255,255,0.06);
-  --border-hi: rgba(139,92,246,0.40);
-  --border-b:  rgba(59,130,246,0.30);
-  --purple:    #8B5CF6;
-  --purple2:   #A78BFA;
-  --blue:      #3B82F6;
-  --blue2:     #60A5FA;
-  --cyan:      #22D3EE;
-  --green:     #10B981;
-  --rose:      #F43F5E;
-  --amber:     #F59E0B;
-  --snow:      #F0F4FF;
-  --muted:     #6B7A99;
-  --dim:       #2D3A55;
-  --serif:     'DM Serif Display', Georgia, serif;
-  --sans:      'Plus Jakarta Sans', sans-serif;
-  --mono:      'Fira Code', monospace;
-  --grad1:     linear-gradient(135deg,#8B5CF6,#3B82F6);
-  --grad2:     linear-gradient(135deg,#3B82F6,#22D3EE);
-  --grad3:     linear-gradient(135deg,#8B5CF6 0%,#EC4899 100%);
+  --navy:       #05070F;
+  --navy2:      #080C18;
+  --navy3:      #0E1428;
+  --navy4:      #141D35;
+  --glass:      rgba(255,255,255,0.04);
+  --glass-hi:   rgba(255,255,255,0.08);
+  --border:     rgba(255,255,255,0.06);
+  --border-pu:  rgba(139,92,246,0.40);
+  --border-bl:  rgba(59,130,246,0.30);
+  --purple:     #8B5CF6;
+  --purple2:    #A78BFA;
+  --blue:       #3B82F6;
+  --blue2:      #60A5FA;
+  --cyan:       #22D3EE;
+  --green:      #10B981;
+  --rose:       #F43F5E;
+  --amber:      #F59E0B;
+  --snow:       #F0F4FF;
+  --muted:      #6B7A99;
+  --dim:        #2D3A55;
+  --grad:       linear-gradient(135deg,#8B5CF6,#3B82F6);
+  --grad2:      linear-gradient(135deg,#3B82F6,#22D3EE);
+  --serif:      'DM Serif Display', Georgia, serif;
+  --sans:       'Plus Jakarta Sans', sans-serif;
+  --mono:       'Fira Code', monospace;
 }
 
-/* ── Base ── */
-html,body,[data-testid="stAppViewContainer"] {
+/* ── Reset & base ── */
+html, body, [data-testid="stAppViewContainer"] {
   background: var(--navy) !important;
   font-family: var(--sans);
   color: var(--snow);
@@ -76,15 +75,15 @@ html,body,[data-testid="stAppViewContainer"] {
 [data-testid="stHeader"]  { background: transparent !important; }
 [data-testid="stToolbar"] { display: none !important; }
 .block-container { padding: 0 2.5rem 5rem !important; max-width: 980px !important; }
+h1,h2,h3 { font-family: var(--serif) !important; color: var(--snow) !important; }
 
 /* ── Sidebar ── */
 [data-testid="stSidebar"] {
   background: var(--navy2) !important;
   border-right: 1px solid var(--border) !important;
 }
-section[data-testid="stSidebar"] > div { padding-top: 0 !important; }
 
-/* ── NAV BRAND ── */
+/* ── Nav elements ── */
 .nav-brand {
   padding: 1.8rem 1.2rem 1rem;
   border-bottom: 1px solid var(--border);
@@ -92,489 +91,229 @@ section[data-testid="stSidebar"] > div { padding-top: 0 !important; }
 }
 .nav-logo {
   display: flex; align-items: center; gap: 10px;
-  font-family: var(--sans); font-size: 1.15rem; font-weight: 800;
+  font-family: var(--sans); font-size: 1.1rem; font-weight: 800;
   letter-spacing: -0.3px; color: var(--snow); margin-bottom: 4px;
 }
 .nav-logo-icon {
-  width: 32px; height: 32px; border-radius: 10px;
-  background: var(--grad1);
+  width: 30px; height: 30px; border-radius: 9px;
+  background: var(--grad);
   display: flex; align-items: center; justify-content: center;
-  font-size: 16px;
+  font-size: 14px; flex-shrink: 0;
 }
-.nav-tagline {
-  font-size: 11px; color: var(--muted); padding-left: 42px;
-  font-weight: 400; letter-spacing: 0.2px;
-}
-.nav-section-label {
-  font-family: var(--mono); font-size: 9px; letter-spacing: 3px;
-  text-transform: uppercase; color: var(--dim);
-  padding: 0 1.2rem; margin: 1rem 0 6px;
-}
-.nav-divider { height: 1px; background: var(--border); margin: 0.8rem 0.8rem; }
-.nav-status {
-  margin: 0.8rem; padding: 12px 14px;
-  background: var(--glass); border: 1px solid var(--border);
-  border-radius: 14px;
-}
-.nav-status-career {
-  font-size: 13px; font-weight: 600; color: var(--snow); margin-bottom: 2px;
-}
-.nav-status-label {
-  font-family: var(--mono); font-size: 9px; letter-spacing: 2px;
-  text-transform: uppercase; color: var(--muted);
-}
-.nav-footer {
-  position: absolute; bottom: 1.2rem; left: 0; right: 0;
-  text-align: center; font-family: var(--mono); font-size: 9px;
-  letter-spacing: 2px; color: var(--dim); text-transform: uppercase;
-}
-
-/* ── Button styles ── */
-.stButton > button {
-  font-family: var(--sans) !important; font-weight: 600 !important;
-  font-size: 14px !important; border-radius: 12px !important;
-  border: none !important; cursor: pointer !important;
-  transition: all 0.22s cubic-bezier(.175,.885,.32,1.275) !important;
-  letter-spacing: 0.3px !important;
-  background: var(--grad1) !important;
-  color: #fff !important;
-  box-shadow: 0 4px 20px rgba(139,92,246,0.30) !important;
-  padding: 0.75rem 1.5rem !important;
-}
-.stButton > button:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 8px 30px rgba(139,92,246,0.45) !important;
-}
-.stButton > button:active { transform: translateY(0) !important; }
+.nav-tagline  { font-size: 11px; color: var(--muted); padding-left: 40px; line-height: 1.4; }
+.nav-slabel   { font-family: var(--mono); font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--dim); padding: 0 1.2rem; margin: 1rem 0 6px; }
+.nav-div      { height: 1px; background: var(--border); margin: 0.8rem; }
+.nav-status   { margin: 0.8rem; padding: 12px 14px; background: var(--glass); border: 1px solid var(--border); border-radius: 14px; }
+.nav-s-career { font-size: 13px; font-weight: 600; color: var(--snow); margin-bottom: 2px; }
+.nav-s-label  { font-family: var(--mono); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+.nav-footer   { position: absolute; bottom: 1.2rem; left: 0; right: 0; text-align: center; font-family: var(--mono); font-size: 9px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; }
 
 /* ── Glass cards ── */
 .card {
   background: var(--glass);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 1.8rem 2rem;
-  margin-bottom: 1.4rem;
-  position: relative;
-  overflow: hidden;
-  backdrop-filter: blur(12px);
-  transition: border-color 0.3s, transform 0.2s;
+  border-radius: 20px; padding: 1.8rem 2rem; margin-bottom: 1.4rem;
+  position: relative; overflow: hidden; backdrop-filter: blur(12px);
+  transition: border-color 0.3s;
 }
 .card::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(139,92,246,0.3), transparent);
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(139,92,246,0.28), transparent);
 }
-.card:hover { border-color: rgba(139,92,246,0.25); }
-.card-purple { border-color: rgba(139,92,246,0.28) !important; background: linear-gradient(135deg,rgba(139,92,246,0.08),var(--glass)); }
-.card-blue   { border-color: rgba(59,130,246,0.28)  !important; background: linear-gradient(135deg,rgba(59,130,246,0.08),var(--glass)); }
-.card-cyan   { border-color: rgba(34,211,238,0.28)  !important; background: linear-gradient(135deg,rgba(34,211,238,0.06),var(--glass)); }
-.card-green  { border-color: rgba(16,185,129,0.28)  !important; background: linear-gradient(135deg,rgba(16,185,129,0.06),var(--glass)); }
-.card-rose   { border-color: rgba(244,63,94,0.28)   !important; background: linear-gradient(135deg,rgba(244,63,94,0.06),var(--glass)); }
+.card:hover { border-color: rgba(139,92,246,0.22); }
+.card-pu { border-color: rgba(139,92,246,0.28) !important; background: linear-gradient(135deg,rgba(139,92,246,0.08),var(--glass)); }
+.card-bl { border-color: rgba(59,130,246,0.28)  !important; background: linear-gradient(135deg,rgba(59,130,246,0.08),var(--glass)); }
+.card-cy { border-color: rgba(34,211,238,0.28)  !important; background: linear-gradient(135deg,rgba(34,211,238,0.06),var(--glass)); }
+.card-gr { border-color: rgba(16,185,129,0.28)  !important; background: linear-gradient(135deg,rgba(16,185,129,0.06),var(--glass)); }
+.card-ro { border-color: rgba(244,63,94,0.28)   !important; background: linear-gradient(135deg,rgba(244,63,94,0.06),var(--glass)); }
+.card-am { border-color: rgba(245,158,11,0.28)  !important; background: linear-gradient(135deg,rgba(245,158,11,0.06),var(--glass)); }
 
-/* ── HERO ── */
-.hero {
-  text-align: center;
-  padding: 5.5rem 1rem 3.5rem;
-  position: relative;
-}
-.hero::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%238B5CF6' fill-opacity='0.025'%3E%3Cpath d='M50 50c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10s-10-4.477-10-10 4.477-10 10-10zM10 10c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10S0 25.523 0 20s4.477-10 10-10z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  pointer-events: none;
-}
+/* ── Hero ── */
+.hero { text-align: center; padding: 5rem 1rem 3rem; position: relative; }
 .hero-eyebrow {
   display: inline-flex; align-items: center; gap: 8px;
-  font-family: var(--mono); font-size: 10px;
-  letter-spacing: 3px; text-transform: uppercase;
-  color: var(--purple2);
-  background: rgba(139,92,246,0.12);
-  border: 1px solid rgba(139,92,246,0.28);
-  border-radius: 100px; padding: 6px 16px;
-  margin-bottom: 1.6rem;
-  animation: fadeDown 0.55s ease both;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--purple2);
+  background: rgba(139,92,246,0.10); border: 1px solid rgba(139,92,246,0.26);
+  border-radius: 100px; padding: 6px 16px; margin-bottom: 1.6rem;
 }
-.hero-eyebrow .dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--purple); animation: pulse 2s infinite;
-}
+.hero-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--purple); animation: pulse 2s infinite; }
 .hero-title {
-  font-family: var(--serif);
-  font-size: clamp(3rem, 7vw, 5rem);
-  font-weight: 400; line-height: 1.06;
-  letter-spacing: -1.5px; color: var(--snow);
-  margin-bottom: 1.2rem;
-  animation: fadeDown 0.55s 0.1s ease both;
-}
-.hero-title .gradient-text {
-  background: var(--grad1);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-family: var(--serif); font-size: clamp(2.8rem,6vw,4.8rem);
+  font-weight: 400; line-height: 1.06; letter-spacing: -1.5px;
+  color: var(--snow); margin-bottom: 1.2rem;
 }
 .hero-title em { font-style: italic; color: var(--purple2); }
-.hero-sub {
-  font-size: 1.1rem; color: var(--muted); font-weight: 400;
-  max-width: 500px; margin: 0 auto 2.8rem; line-height: 1.78;
-  animation: fadeDown 0.55s 0.2s ease both;
+.hero-grad-text {
+  background: var(--grad); -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent; background-clip: text;
 }
-.hero-cta {
-  display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
-  animation: fadeDown 0.55s 0.3s ease both; margin-bottom: 3.5rem;
-}
-.btn-primary {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: var(--grad1); color: #fff;
-  padding: 14px 28px; border-radius: 14px; font-size: 15px;
-  font-weight: 700; font-family: var(--sans);
-  box-shadow: 0 4px 24px rgba(139,92,246,0.4);
-  transition: all 0.22s; cursor: pointer; border: none;
-  letter-spacing: 0.2px; text-decoration: none;
-}
-.btn-secondary {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: var(--glass); color: var(--snow);
-  padding: 14px 28px; border-radius: 14px; font-size: 15px;
-  font-weight: 600; font-family: var(--sans);
-  border: 1px solid var(--border); cursor: pointer;
-  transition: all 0.22s; text-decoration: none;
-}
-.hero-features {
-  display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;
-  animation: fadeDown 0.55s 0.35s ease both;
-}
-.hero-feat {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--glass); border: 1px solid var(--border);
-  border-radius: 100px; padding: 8px 18px;
-  font-size: 12px; color: var(--muted); font-weight: 500;
-}
-.hero-feat .feat-icon { font-size: 14px; }
+.hero-sub { font-size: 1.05rem; color: var(--muted); font-weight: 400; max-width: 500px; margin: 0 auto 2.5rem; line-height: 1.78; }
+.hero-pills { display: flex; justify-content: center; gap: 0.8rem; flex-wrap: wrap; }
+.hero-pill  { display: flex; align-items: center; gap: 7px; background: var(--glass); border: 1px solid var(--border); border-radius: 100px; padding: 7px 16px; font-size: 12px; color: var(--muted); font-weight: 500; }
 
 /* ── Section labels ── */
-.section-eyebrow {
-  font-family: var(--mono); font-size: 10px;
-  letter-spacing: 3px; text-transform: uppercase;
-  color: var(--purple2); margin-bottom: 0.5rem;
-}
-.section-title {
-  font-family: var(--serif); font-size: 2.2rem;
-  color: var(--snow); margin-bottom: 0.6rem; line-height: 1.15;
-}
-.section-sub {
-  font-size: 14px; color: var(--muted);
-  margin-bottom: 2rem; line-height: 1.7;
-}
-
-/* ── Feature grid ── */
-.feat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.4rem; }
-.feat-item {
-  background: var(--glass); border: 1px solid var(--border);
-  border-radius: 16px; padding: 1.4rem 1.5rem;
-  transition: border-color 0.25s;
-}
-.feat-item:hover { border-color: rgba(139,92,246,0.3); }
-.feat-item-icon { font-size: 1.8rem; margin-bottom: 0.8rem; }
-.feat-item-title { font-size: 14px; font-weight: 700; color: var(--snow); margin-bottom: 4px; }
-.feat-item-desc  { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.s-eye   { font-family: var(--mono); font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--purple2); margin-bottom: .5rem; }
+.s-title { font-family: var(--serif); font-size: 2.1rem; color: var(--snow); margin-bottom: .6rem; line-height: 1.15; }
+.s-sub   { font-size: 14px; color: var(--muted); margin-bottom: 1.8rem; line-height: 1.7; }
 
 /* ── Quiz ── */
-.quiz-header {
-  background: var(--glass); border: 1px solid var(--border);
-  border-radius: 16px; padding: 1rem 1.5rem;
-  margin-bottom: 1.5rem;
+.quiz-hdr {
+  background: var(--glass); border: 1px solid var(--border); border-radius: 16px;
+  padding: 1rem 1.5rem; margin-bottom: 1.5rem;
   display: flex; align-items: center; justify-content: space-between;
 }
-.quiz-header-left { display: flex; flex-direction: column; }
-.quiz-prog-label {
-  font-family: var(--mono); font-size: 9px; letter-spacing: 3px;
-  text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
-}
-.quiz-prog-bar-bg {
-  width: 240px; height: 3px; background: var(--navy3);
-  border-radius: 100px; overflow: hidden;
-}
-.quiz-prog-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--purple), var(--blue));
-  border-radius: 100px; transition: width 0.5s ease;
-}
-.quiz-step-badge {
-  font-family: var(--mono); font-size: 12px; font-weight: 500;
-  color: var(--purple2); background: rgba(139,92,246,0.12);
-  border: 1px solid rgba(139,92,246,0.25);
-  border-radius: 100px; padding: 4px 14px;
-}
-.quiz-q-num {
-  font-family: var(--mono); font-size: 10px; letter-spacing: 2px;
-  text-transform: uppercase; color: var(--purple2); margin-bottom: 0.6rem;
-}
-.quiz-q-text {
-  font-family: var(--serif); font-size: 1.6rem;
-  color: var(--snow); margin-bottom: 2rem; line-height: 1.35;
-}
-.quiz-opt-key {
-  width: 26px; height: 26px; border-radius: 8px;
-  background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--mono); font-size: 10px; color: var(--dim);
-  flex-shrink: 0; transition: all 0.2s;
-}
+.quiz-prog-label { font-family: var(--mono); font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.quiz-prog-bg    { width: 240px; height: 3px; background: var(--navy3); border-radius: 100px; overflow: hidden; }
+.quiz-prog-fill  { height: 100%; background: linear-gradient(90deg,var(--purple),var(--blue)); border-radius: 100px; transition: width 0.5s ease; }
+.quiz-step-badge { font-family: var(--mono); font-size: 12px; color: var(--purple2); background: rgba(139,92,246,0.10); border: 1px solid rgba(139,92,246,0.24); border-radius: 100px; padding: 4px 14px; }
+.quiz-q-num  { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--purple2); margin-bottom: .5rem; }
+.quiz-q-text { font-family: var(--serif); font-size: 1.55rem; color: var(--snow); margin-bottom: 1.8rem; line-height: 1.35; }
 
-/* ── Results ── */
-.result-hero {
-  text-align: center; padding: 2.8rem 1rem 2rem;
-  position: relative;
-}
+/* ── Result ── */
 .result-badge {
   display: inline-flex; align-items: center; gap: 8px;
-  font-family: var(--mono); font-size: 10px; letter-spacing: 3px;
-  text-transform: uppercase; color: var(--amber);
-  background: rgba(245,158,11,0.10);
-  border: 1px solid rgba(245,158,11,0.28);
-  border-radius: 100px; padding: 6px 16px; margin-bottom: 1.2rem;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--amber); background: rgba(245,158,11,0.10);
+  border: 1px solid rgba(245,158,11,0.26); border-radius: 100px; padding: 6px 16px; margin-bottom: 1.2rem;
 }
-.result-icon   { font-size: 5.5rem; line-height: 1; margin-bottom: 0.5rem; animation: bounceIn 0.6s ease both; }
-.result-career { font-family: var(--serif); font-size: clamp(2.2rem,5vw,3.5rem); color: var(--snow); margin-bottom: 0.5rem; letter-spacing: -0.5px; }
+.result-icon   { font-size: 5.5rem; line-height: 1; margin-bottom: .5rem; }
+.result-career { font-family: var(--serif); font-size: clamp(2rem,5vw,3.4rem); color: var(--snow); margin-bottom: .4rem; }
 .result-conf   { font-family: var(--mono); font-size: 13px; color: var(--green); margin-bottom: 1rem; }
 .result-expl   { font-size: 15px; color: var(--muted); max-width: 480px; margin: 0 auto; line-height: 1.75; }
 
+/* ── Personality chips ── */
+.p-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 16px; border-radius: 100px; font-family: var(--mono); font-size: 11px; letter-spacing: 1px; font-weight: 500; margin: 3px; }
+.pc-an  { background: rgba(59,130,246,0.12);  border: 1px solid rgba(59,130,246,0.30);  color: var(--blue2); }
+.pc-cr  { background: rgba(245,158,11,0.12);  border: 1px solid rgba(245,158,11,0.30);  color: var(--amber); }
+.pc-in  { background: rgba(139,92,246,0.12);  border: 1px solid rgba(139,92,246,0.30);  color: var(--purple2); }
+.pc-ex  { background: rgba(244,63,94,0.12);   border: 1px solid rgba(244,63,94,0.30);   color: var(--rose); }
+.pc-ld  { background: rgba(16,185,129,0.12);  border: 1px solid rgba(16,185,129,0.30);  color: var(--green); }
+
 /* ── Confidence ring ── */
-.conf-ring-wrap {
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center; padding: 1.5rem 0;
-}
-.conf-ring-outer {
-  width: 130px; height: 130px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  position: relative;
-}
-.conf-ring-svg { position: absolute; inset: 0; transform: rotate(-90deg); }
-.conf-ring-inner {
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center;
-}
-.conf-num   { font-family: var(--serif); font-size: 2.4rem; color: var(--snow); line-height: 1; }
+.conf-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 0; }
+.conf-outer { width: 130px; height: 130px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; }
+.conf-svg   { position: absolute; inset: 0; transform: rotate(-90deg); }
+.conf-inner { display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+.conf-num   { font-family: var(--serif); font-size: 2.5rem; color: var(--snow); line-height: 1; }
 .conf-unit  { font-family: var(--mono); font-size: 9px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
 
-/* ── Personality chips ── */
-.personality-chip {
-  display: inline-flex; align-items: center; gap: 7px;
-  padding: 7px 16px; border-radius: 100px;
-  font-family: var(--mono); font-size: 11px; letter-spacing: 1px;
-  font-weight: 500; margin: 3px;
-}
-.chip-analytical { background: rgba(59,130,246,0.12);  border: 1px solid rgba(59,130,246,0.3);  color: var(--blue2); }
-.chip-creative   { background: rgba(245,158,11,0.12);  border: 1px solid rgba(245,158,11,0.3);  color: var(--amber); }
-.chip-introvert  { background: rgba(139,92,246,0.12);  border: 1px solid rgba(139,92,246,0.3);  color: var(--purple2); }
-.chip-extrovert  { background: rgba(244,63,94,0.12);   border: 1px solid rgba(244,63,94,0.3);   color: var(--rose); }
-.chip-leader     { background: rgba(16,185,129,0.12);  border: 1px solid rgba(16,185,129,0.3);  color: var(--green); }
+/* ── Top-3 rows ── */
+.t3-row  { background: var(--glass); border: 1px solid var(--border); border-radius: 14px; padding: 1rem 1.4rem; display: flex; align-items: center; margin-bottom: .8rem; transition: border-color 0.2s, transform 0.15s; }
+.t3-row:hover { border-color: rgba(139,92,246,0.28); transform: translateX(4px); }
+.t3-rank { font-family: var(--mono); font-size: 11px; color: var(--dim); width: 26px; flex-shrink: 0; }
+.t3-name { font-size: 14px; font-weight: 600; color: var(--snow); flex: 1; margin-left: 12px; }
+.t3-bar-bg   { width: 80px; height: 3px; background: var(--navy3); border-radius: 100px; overflow: hidden; }
+.t3-bar-fill { height: 100%; border-radius: 100px; background: var(--grad); }
+.t3-pct  { font-family: var(--mono); font-size: 12px; color: var(--purple2); margin-left: 12px; min-width: 42px; text-align: right; }
+.t3-icon { font-size: 18px; margin-left: 10px; }
 
-/* ── Top 3 rows ── */
-.top3-row {
-  background: var(--glass); border: 1px solid var(--border);
-  border-radius: 14px; padding: 1rem 1.4rem;
-  display: flex; align-items: center; margin-bottom: 0.8rem;
-  transition: border-color 0.2s, transform 0.15s;
-  animation: fadeUp 0.4s ease both;
-}
-.top3-row:hover { border-color: rgba(139,92,246,0.3); transform: translateX(4px); }
-.top3-rank  { font-family: var(--mono); font-size: 11px; color: var(--dim); width: 26px; flex-shrink: 0; }
-.top3-name  { font-size: 14px; font-weight: 600; color: var(--snow); flex: 1; margin-left: 12px; }
-.top3-bar-bg { width: 80px; height: 3px; background: var(--navy3); border-radius: 100px; overflow: hidden; }
-.top3-bar-fill { height: 100%; border-radius: 100px; background: var(--grad1); }
-.top3-pct   { font-family: var(--mono); font-size: 12px; color: var(--purple2); margin-left: 12px; min-width: 42px; text-align: right; }
-.top3-icon  { font-size: 18px; margin-left: 10px; }
-
-/* ── Roadmap — vertical timeline ── */
-.roadmap-timeline { position: relative; }
-.roadmap-step {
-  display: flex; gap: 1.4rem; margin-bottom: 1.8rem;
-  animation: fadeUp 0.45s ease both;
-}
-.roadmap-step-left {
-  display: flex; flex-direction: column; align-items: center; flex-shrink: 0;
-}
-.roadmap-step-circle {
-  width: 42px; height: 42px; border-radius: 50%;
-  background: var(--grad1);
+/* ── Roadmap ── */
+.rm-step   { display: flex; gap: 1.4rem; margin-bottom: 1.8rem; }
+.rm-left   { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+.rm-circle {
+  width: 42px; height: 42px; border-radius: 50%; background: var(--grad);
   display: flex; align-items: center; justify-content: center;
-  font-family: var(--mono); font-size: 13px; color: #fff;
-  font-weight: 500; flex-shrink: 0;
-  box-shadow: 0 0 18px rgba(139,92,246,0.45);
+  font-family: var(--mono); font-size: 13px; color: #fff; font-weight: 500;
+  flex-shrink: 0; box-shadow: 0 0 18px rgba(139,92,246,0.40);
 }
-.roadmap-step-line {
-  width: 2px; flex: 1; margin: 6px 0; min-height: 24px;
-  background: linear-gradient(to bottom, rgba(139,92,246,0.35), transparent);
-}
-.roadmap-step-body { padding-top: 8px; flex: 1; }
-.roadmap-step-tag {
-  font-family: var(--mono); font-size: 9px; letter-spacing: 3px;
-  text-transform: uppercase; color: var(--purple2); margin-bottom: 4px;
-}
-.roadmap-step-title { font-size: 16px; font-weight: 700; color: var(--snow); margin-bottom: 5px; }
-.roadmap-step-desc  { font-size: 13px; color: var(--muted); line-height: 1.65; margin-bottom: 0.7rem; }
-.skill-tag {
-  display: inline-block;
-  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
-  border-radius: 8px; padding: 3px 10px;
-  font-family: var(--mono); font-size: 11px; color: var(--muted);
-  margin: 2px 3px 2px 0;
-}
-.skill-tag.purple { background: rgba(139,92,246,0.12); border-color: rgba(139,92,246,0.3); color: var(--purple2); }
-.skill-tag.blue   { background: rgba(59,130,246,0.12);  border-color: rgba(59,130,246,0.3);  color: var(--blue2); }
-.skill-tag.green  { background: rgba(16,185,129,0.12);  border-color: rgba(16,185,129,0.3);  color: var(--green); }
+.rm-line   { width: 2px; flex: 1; margin: 6px 0; min-height: 24px; background: linear-gradient(to bottom, rgba(139,92,246,0.32), transparent); }
+.rm-body   { padding-top: 8px; flex: 1; }
+.rm-tag    { font-family: var(--mono); font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--purple2); margin-bottom: 4px; }
+.rm-title  { font-size: 16px; font-weight: 700; color: var(--snow); margin-bottom: 5px; }
+.rm-desc   { font-size: 13px; color: var(--muted); line-height: 1.65; margin-bottom: .7rem; }
+.sk-tag    { display: inline-block; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 3px 10px; font-family: var(--mono); font-size: 11px; color: var(--muted); margin: 2px 3px 2px 0; }
+.sk-pu     { background: rgba(139,92,246,0.11); border-color: rgba(139,92,246,0.28); color: var(--purple2); }
+.sk-bl     { background: rgba(59,130,246,0.11);  border-color: rgba(59,130,246,0.28);  color: var(--blue2); }
+.sk-gr     { background: rgba(16,185,129,0.11);  border-color: rgba(16,185,129,0.28);  color: var(--green); }
 
 /* ── Chat ── */
-.chat-bubble { max-width: 80%; margin-bottom: 1.1rem; animation: fadeUp 0.3s ease both; }
-.chat-bubble.user { margin-left: auto; }
-.chat-meta {
-  font-family: var(--mono); font-size: 9px; letter-spacing: 1.5px;
-  text-transform: uppercase; color: var(--dim);
-  margin-bottom: 5px; padding: 0 4px;
-}
-.chat-bubble.user .chat-meta { text-align: right; }
-.chat-text {
-  padding: 0.9rem 1.25rem; border-radius: 18px;
-  font-size: 14px; line-height: 1.68;
-}
-.chat-bubble.user .chat-text {
-  background: linear-gradient(135deg,rgba(139,92,246,0.20),rgba(59,130,246,0.15));
-  border: 1px solid rgba(139,92,246,0.3); color: var(--snow);
-  border-bottom-right-radius: 4px;
-}
-.chat-bubble.bot .chat-text {
-  background: var(--glass); border: 1px solid var(--border);
-  color: var(--muted); border-bottom-left-radius: 4px;
-}
-.chat-suggestions {
-  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.4rem;
-}
-.chat-sug {
-  background: var(--glass); border: 1px solid var(--border);
-  border-radius: 100px; padding: 7px 16px;
-  font-size: 12px; color: var(--muted); cursor: pointer;
-  transition: all 0.2s; font-weight: 500;
-}
-.chat-sug:hover { border-color: rgba(139,92,246,0.4); color: var(--purple2); }
+.chat-b    { max-width: 80%; margin-bottom: 1.1rem; }
+.chat-b.u  { margin-left: auto; }
+.chat-meta { font-family: var(--mono); font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--dim); margin-bottom: 5px; padding: 0 4px; }
+.chat-b.u .chat-meta { text-align: right; }
+.chat-txt  { padding: .9rem 1.25rem; border-radius: 18px; font-size: 14px; line-height: 1.68; }
+.chat-b.u .chat-txt { background: linear-gradient(135deg,rgba(139,92,246,0.20),rgba(59,130,246,0.15)); border: 1px solid rgba(139,92,246,0.28); color: var(--snow); border-bottom-right-radius: 4px; }
+.chat-b.bot .chat-txt { background: var(--glass); border: 1px solid var(--border); color: var(--muted); border-bottom-left-radius: 4px; }
 
 /* ── Resume ── */
-.resume-score-card {
-  text-align: center; padding: 2rem;
-}
-.resume-grade {
-  font-family: var(--serif); font-size: 5.5rem;
-  line-height: 1; margin-bottom: 0.2rem;
-}
-.resume-score-sub {
-  font-family: var(--mono); font-size: 11px;
-  letter-spacing: 2px; color: var(--muted); text-transform: uppercase;
-}
-.grade-badge {
-  display: inline-block; margin-top: 1rem;
-  padding: 5px 18px; border-radius: 100px;
-  font-family: var(--mono); font-size: 12px; font-weight: 500;
-}
-.kw-chip {
-  display: inline-block;
-  padding: 3px 10px; border-radius: 8px;
-  font-family: var(--mono); font-size: 11px;
-  margin: 2px 3px 2px 0;
-}
-.kw-found   { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); color: var(--green); }
-.kw-missing { background: rgba(244,63,94,0.10);  border: 1px solid rgba(244,63,94,0.25); color: var(--rose); }
-.suggestion-row {
-  display: flex; gap: 12px; align-items: flex-start;
-  padding: 0.8rem 0; border-bottom: 1px solid var(--border);
-  font-size: 13px; color: var(--muted); line-height: 1.65;
-}
-.suggestion-row:last-child { border-bottom: none; }
-.sug-icon { flex-shrink: 0; margin-top: 1px; font-size: 15px; }
+.sug-row  { display: flex; gap: 12px; align-items: flex-start; padding: .8rem 0; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--muted); line-height: 1.65; }
+.sug-row:last-child { border-bottom: none; }
+.kw-found   { display: inline-block; padding: 3px 10px; border-radius: 8px; font-family: var(--mono); font-size: 11px; margin: 2px 3px; background: rgba(16,185,129,0.11); border: 1px solid rgba(16,185,129,0.28); color: var(--green); }
+.kw-missing { display: inline-block; padding: 3px 10px; border-radius: 8px; font-family: var(--mono); font-size: 11px; margin: 2px 3px; background: rgba(244,63,94,0.10); border: 1px solid rgba(244,63,94,0.24); color: var(--rose); }
 
-/* ── Inputs ── */
+/* ── Buttons ── */
+.stButton > button {
+  font-family: var(--sans) !important; font-weight: 600 !important;
+  font-size: 14px !important; border-radius: 12px !important; border: none !important;
+  cursor: pointer !important; transition: all 0.22s !important; letter-spacing: 0.3px !important;
+  background: var(--grad) !important; color: #fff !important;
+  box-shadow: 0 4px 20px rgba(139,92,246,0.28) !important; padding: .75rem 1.5rem !important;
+}
+.stButton > button:hover { transform: translateY(-2px) !important; box-shadow: 0 8px 28px rgba(139,92,246,0.42) !important; }
+
+/* ── Text inputs ── */
 .stTextArea textarea {
-  background: var(--navy3) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 14px !important;
-  color: var(--snow) !important;
+  background: var(--navy3) !important; border: 1px solid var(--border) !important;
+  border-radius: 14px !important; color: var(--snow) !important;
   font-family: var(--mono) !important; font-size: 13px !important;
 }
-.stTextArea textarea:focus {
-  border-color: rgba(139,92,246,0.45) !important;
-  box-shadow: 0 0 0 3px rgba(139,92,246,0.10) !important;
-}
+.stTextArea textarea:focus { border-color: rgba(139,92,246,0.44) !important; box-shadow: 0 0 0 3px rgba(139,92,246,0.10) !important; }
 .stTextInput input {
-  background: var(--navy3) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
-  color: var(--snow) !important;
+  background: var(--navy3) !important; border: 1px solid var(--border) !important;
+  border-radius: 12px !important; color: var(--snow) !important;
   font-family: var(--sans) !important;
 }
-.stTextInput input:focus {
-  border-color: rgba(139,92,246,0.45) !important;
-}
+.stTextInput input:focus { border-color: rgba(139,92,246,0.44) !important; }
 
-/* ── Dividers ── */
-.hdivider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(139,92,246,0.15), transparent);
-  margin: 2.5rem 0;
-}
-
-/* ── Footer ── */
-.footer {
-  text-align: center; padding: 3rem 0 1.5rem;
-  font-family: var(--mono); font-size: 10px;
-  letter-spacing: 2px; color: var(--dim); text-transform: uppercase; line-height: 2.4;
-}
+/* ── Misc ── */
+.hdiv { height: 1px; background: linear-gradient(90deg,transparent,rgba(139,92,246,0.14),transparent); margin: 2.5rem 0; }
+.footer { text-align: center; padding: 3rem 0 1.5rem; font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; line-height: 2.4; }
+[data-testid="stAlert"] { border-radius: 12px !important; font-family: var(--sans) !important; }
 
 /* ── Animations ── */
-@keyframes fadeDown  { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:none} }
-@keyframes fadeUp    { from{opacity:0;transform:translateY(12px)}  to{opacity:1;transform:none} }
-@keyframes bounceIn  { 0%{opacity:0;transform:scale(0.4)} 70%{transform:scale(1.12)} 100%{opacity:1;transform:scale(1)} }
-@keyframes pulse     { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-/* ── Streamlit overrides ── */
-[data-testid="stAlert"] { border-radius: 12px !important; font-family: var(--sans) !important; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
 </style>
 """, unsafe_allow_html=True)
 
 
-# ══════════════════════════════════════════════════════════════════════
-# QUIZ DATA — 15 behavioural MCQs
-# ══════════════════════════════════════════════════════════════════════
-QUESTIONS = [
+# ═════════════════════════════════════════════════════════════
+# QUIZ — 15 behavioural MCQs
+# ═════════════════════════════════════════════════════════════
+QUESTIONS: list[dict] = [
     {
         "text": "When you face a complex problem, how do you usually approach it?",
         "options": [
-            "Break it into logical steps and analyse data carefully",
-            "Brainstorm creatively and experiment with novel ideas",
-            "Discuss with teammates and gather different viewpoints",
-            "Follow an established process or best-practice framework",
+            "Break it into logical steps and analyse the data carefully",
+            "Brainstorm creatively and experiment with novel solutions",
+            "Discuss with teammates to gather different viewpoints",
+            "Follow an established process or proven best-practice framework",
         ],
     },
     {
-        "text": "Which weekend activity sounds most exciting to you?",
+        "text": "Which weekend activity excites you the most?",
         "options": [
-            "Building a personal coding project or automating something",
-            "Designing, drawing, writing, or making something visual",
+            "Building a coding project or automating something tedious",
+            "Designing, drawing, writing, or creating something visual",
             "Organising a community event or helping people around you",
-            "Reading research, learning a new concept, or doing experiments",
+            "Reading research, studying a new concept, or running experiments",
         ],
     },
     {
-        "text": "In a group project, which role do you naturally gravitate towards?",
+        "text": "In a group project, which role do you naturally take on?",
         "options": [
             "The builder or developer who writes the code",
             "The designer or storyteller who shapes the experience",
             "The leader or coordinator who keeps everyone aligned",
-            "The researcher or analyst who digs into the data",
+            "The researcher or analyst who digs deep into the data",
         ],
     },
     {
-        "text": "How would you rate your comfort with Maths and Statistics?",
+        "text": "How comfortable are you with Mathematics or Statistics?",
         "options": [
             "Very comfortable — I genuinely enjoy numbers and equations",
-            "Comfortable with fundamentals, find advanced topics challenging",
+            "Comfortable with basics; advanced topics feel challenging",
             "I strongly prefer language, ideas, and creativity over numbers",
             "I manage when I need to, but I dislike it overall",
         ],
@@ -593,7 +332,7 @@ QUESTIONS = [
         "options": [
             "I love it — audiences energise and motivate me",
             "I am fine with it, though I prefer smaller groups",
-            "I would much rather write a report or send a document",
+            "I would much rather write a report than speak publicly",
             "I actively avoid public speaking whenever possible",
         ],
     },
@@ -602,8 +341,8 @@ QUESTIONS = [
         "options": [
             "I thrive — pressure sharpens my concentration",
             "I manage well as long as I have planned ahead",
-            "I struggle but usually push through somehow",
-            "I find it very stressful and it affects my output",
+            "I struggle but usually push through",
+            "I find it very stressful and it hurts my output",
         ],
     },
     {
@@ -625,25 +364,25 @@ QUESTIONS = [
         ],
     },
     {
-        "text": "How often do you independently explore new tools or technologies?",
+        "text": "How often do you independently learn new tools or technologies?",
         "options": [
             "Constantly — I am a self-driven, curious learner",
-            "Often — especially when a project needs it",
+            "Often — especially when a project demands it",
             "Sometimes — mainly when external pressure pushes me",
-            "Rarely — I stick to structured classes and formal learning",
+            "Rarely — I stick to structured classes and formal learning only",
         ],
     },
     {
         "text": "Have you taken part in hackathons, competitions, or open-source work?",
         "options": [
             "Yes — multiple times and I genuinely enjoyed every experience",
-            "Once or twice — it was a decent and worthwhile experience",
+            "Once or twice — decent and worthwhile overall",
             "Tried once but found it was not really for me",
             "No — I have never participated in any such activity",
         ],
     },
     {
-        "text": "What type of product would you find most satisfying to build?",
+        "text": "Which type of product would you find most satisfying to build?",
         "options": [
             "A robust backend system, AI model, or data pipeline",
             "A beautiful app, website, or immersive visual experience",
@@ -661,7 +400,7 @@ QUESTIONS = [
         ],
     },
     {
-        "text": "What motivates you most when choosing a career direction?",
+        "text": "What motivates you most when thinking about your career?",
         "options": [
             "Solving hard technical or engineering challenges every day",
             "Creating things that look, feel, or sound truly remarkable",
@@ -680,110 +419,112 @@ QUESTIONS = [
     },
 ]
 
-# ══════════════════════════════════════════════════════════════════════
-# CAREER ROADMAPS
-# ══════════════════════════════════════════════════════════════════════
-ROADMAPS = {
+
+# ═════════════════════════════════════════════════════════════
+# CAREER ROADMAPS  (9 careers + default fallback)
+# ═════════════════════════════════════════════════════════════
+ROADMAPS: dict[str, list[dict]] = {
     "default": [
-        {"tag":"Phase 01 · Foundations","title":"Core Fundamentals","desc":"Master the fundamental concepts of your chosen domain. One language, one tool — go deep before going wide.","skills":["Python / Java","Problem Solving","Git & Version Control"],"type":"purple"},
-        {"tag":"Phase 02 · Specialisation","title":"Domain Skills","desc":"Dive into the specialised tools and frameworks your career demands. Build small projects alongside learning.","skills":["Domain Tools","Certifications","Structured Practice"],"type":"blue"},
-        {"tag":"Phase 03 · Portfolio","title":"Real-World Projects","desc":"Build 2–3 portfolio projects that demonstrate your abilities to employers. Deploy and document every one.","skills":["GitHub Portfolio","Documentation","Deployment"],"type":"green"},
-        {"tag":"Phase 04 · Network","title":"Community & Visibility","desc":"Engage with professional communities, attend meetups, contribute to open-source, and write about your work.","skills":["LinkedIn","Open Source","Tech Blog"],"type":"purple"},
-        {"tag":"Phase 05 · Career","title":"Land Your First Role","desc":"Apply strategically. Tailor your resume to each role and prepare thoroughly for domain-specific interviews.","skills":["Resume Polish","Mock Interviews","LeetCode / DSA"],"type":"blue"},
+        {"tag": "Phase 01 · Foundations",    "title": "Core Fundamentals",       "desc": "Master the fundamental concepts of your domain. One language, one tool — go deep before going wide.",                                          "skills": ["Python / Java", "Problem Solving", "Git"],          "type": "pu"},
+        {"tag": "Phase 02 · Specialisation", "title": "Domain Skills",            "desc": "Dive into the tools and frameworks your career demands. Build small projects alongside every course.",                                            "skills": ["Domain Tools", "Certifications", "Practice"],       "type": "bl"},
+        {"tag": "Phase 03 · Portfolio",      "title": "Real-World Projects",      "desc": "Build 2–3 portfolio projects that demonstrate your abilities. Deploy and document every one of them.",                                            "skills": ["GitHub", "Documentation", "Deployment"],            "type": "gr"},
+        {"tag": "Phase 04 · Network",        "title": "Community & Visibility",   "desc": "Engage with professionals, attend meetups, contribute to open-source, and write about your work.",                                               "skills": ["LinkedIn", "Open Source", "Blog"],                  "type": "pu"},
+        {"tag": "Phase 05 · Career",         "title": "Land Your First Role",     "desc": "Apply strategically. Tailor your resume to each role and prepare deeply for domain-specific interviews.",                                        "skills": ["Resume Polish", "Mock Interviews", "LeetCode"],     "type": "bl"},
     ],
     "software developer": [
-        {"tag":"Phase 01 · Foundations","title":"Programming Fundamentals","desc":"Learn Python or JavaScript deeply. Understand data structures, algorithms, and OOP from first principles.","skills":["Python","JavaScript","DSA","Git"],"type":"purple"},
-        {"tag":"Phase 02 · Full-Stack","title":"Web & API Development","desc":"Build end-to-end applications with modern frameworks. Master REST APIs, authentication, and databases.","skills":["React / Vue","Node.js / Django","SQL","REST APIs"],"type":"blue"},
-        {"tag":"Phase 03 · DevOps","title":"Deployment & Infrastructure","desc":"Learn CI/CD pipelines, containerisation, and cloud platforms to ship production-grade software.","skills":["Docker","GitHub Actions","AWS / GCP","Linux"],"type":"green"},
-        {"tag":"Phase 04 · Portfolio","title":"Three Showcase Projects","desc":"Build: a CRUD app with auth, a real-time app with WebSockets, and a complex API-heavy service. Deploy all three.","skills":["Full Stack Apps","Open Source","GitHub"],"type":"purple"},
-        {"tag":"Phase 05 · Interviews","title":"Interview Mastery","desc":"Practice DSA daily, study system design patterns, and conduct mock interviews with peers.","skills":["LeetCode","System Design","Mock Interviews"],"type":"blue"},
+        {"tag": "Phase 01 · Foundations",    "title": "Programming Fundamentals", "desc": "Learn Python or JavaScript deeply. Understand data structures, algorithms, and OOP from first principles.",                                      "skills": ["Python", "JavaScript", "DSA", "Git"],               "type": "pu"},
+        {"tag": "Phase 02 · Full-Stack",     "title": "Web & API Development",   "desc": "Build end-to-end applications with modern frameworks. Master REST APIs, authentication, and databases.",                                          "skills": ["React / Vue", "Node.js / Django", "SQL", "REST"],   "type": "bl"},
+        {"tag": "Phase 03 · DevOps",         "title": "Deployment & Cloud",       "desc": "Learn CI/CD, containerisation, and cloud platforms to ship production-grade software confidently.",                                              "skills": ["Docker", "GitHub Actions", "AWS / GCP", "Linux"],   "type": "gr"},
+        {"tag": "Phase 04 · Portfolio",      "title": "Three Showcase Projects",  "desc": "Build: a CRUD app with auth, a real-time app, and a complex API-heavy service. Deploy all three.",                                              "skills": ["Full Stack Apps", "Open Source", "GitHub"],         "type": "pu"},
+        {"tag": "Phase 05 · Interviews",     "title": "Interview Mastery",        "desc": "Practice DSA daily, study system design patterns, and conduct mock interviews with peers regularly.",                                            "skills": ["LeetCode", "System Design", "Mock Interviews"],     "type": "bl"},
     ],
     "data scientist": [
-        {"tag":"Phase 01 · Foundations","title":"Python & Statistical Thinking","desc":"Master Python for data work and build strong statistical reasoning around probability and inference.","skills":["Python","NumPy","Pandas","Statistics"],"type":"purple"},
-        {"tag":"Phase 02 · Machine Learning","title":"Core ML Algorithms","desc":"Learn supervised and unsupervised learning, model evaluation, cross-validation, and feature engineering.","skills":["scikit-learn","XGBoost","Feature Engineering","CV"],"type":"blue"},
-        {"tag":"Phase 03 · Deep Learning","title":"Neural Networks & NLP","desc":"Explore neural networks, language models, and computer vision with PyTorch or TensorFlow.","skills":["TensorFlow","PyTorch","CNNs","Transformers"],"type":"green"},
-        {"tag":"Phase 04 · Communication","title":"Data Storytelling","desc":"Translate complex findings into clear, compelling visuals and dashboards that drive decisions.","skills":["Matplotlib","Seaborn","Power BI","Streamlit"],"type":"purple"},
-        {"tag":"Phase 05 · Projects","title":"End-to-End ML Projects","desc":"Compete on Kaggle, deploy models as APIs, and publish insights publicly on Medium or LinkedIn.","skills":["Kaggle","MLflow","FastAPI","Hugging Face"],"type":"blue"},
+        {"tag": "Phase 01 · Foundations",    "title": "Python & Statistics",      "desc": "Master Python for data work and build strong statistical reasoning around probability and inference.",                                           "skills": ["Python", "NumPy", "Pandas", "Statistics"],          "type": "pu"},
+        {"tag": "Phase 02 · ML Core",        "title": "Machine Learning",         "desc": "Learn supervised and unsupervised algorithms, model evaluation, cross-validation, and feature engineering.",                                     "skills": ["scikit-learn", "XGBoost", "Feature Eng.", "CV"],    "type": "bl"},
+        {"tag": "Phase 03 · Deep Learning",  "title": "Neural Networks & NLP",   "desc": "Explore neural networks, language models, and computer vision with PyTorch or TensorFlow.",                                                     "skills": ["TensorFlow", "PyTorch", "CNNs", "Transformers"],    "type": "gr"},
+        {"tag": "Phase 04 · Communication",  "title": "Data Storytelling",        "desc": "Translate complex findings into clear, compelling visuals and dashboards that drive real decisions.",                                             "skills": ["Matplotlib", "Seaborn", "Power BI", "Streamlit"],   "type": "pu"},
+        {"tag": "Phase 05 · Projects",       "title": "End-to-End ML Projects",   "desc": "Compete on Kaggle, deploy models as APIs, and publish insights publicly on Medium or LinkedIn.",                                                "skills": ["Kaggle", "MLflow", "FastAPI", "Hugging Face"],      "type": "bl"},
     ],
     "machine learning engineer": [
-        {"tag":"Phase 01 · Foundations","title":"Math & Python Mastery","desc":"Linear algebra, calculus, probability theory, and clean Python are the non-negotiable bedrock.","skills":["Linear Algebra","Calculus","Probability","Python"],"type":"purple"},
-        {"tag":"Phase 02 · Frameworks","title":"Deep Learning Tools","desc":"Build and train neural networks with PyTorch and TensorFlow. Understand modern architectures deeply.","skills":["PyTorch","TensorFlow","Keras","JAX"],"type":"blue"},
-        {"tag":"Phase 03 · MLOps","title":"Production ML Systems","desc":"Deploy, monitor, retrain, and scale ML models. Learn the full lifecycle from experiment to production.","skills":["Docker","Kubernetes","MLflow","Airflow"],"type":"green"},
-        {"tag":"Phase 04 · Specialisation","title":"Choose Your Domain","desc":"Pick NLP, Computer Vision, Recommender Systems, or Reinforcement Learning — then go extremely deep.","skills":["Transformers","YOLO","RecSys","RL"],"type":"purple"},
-        {"tag":"Phase 05 · Research","title":"Contribute & Publish","desc":"Read arXiv papers, reproduce results, contribute to Hugging Face, and build an open research presence.","skills":["arXiv","Papers With Code","Hugging Face","GitHub"],"type":"blue"},
+        {"tag": "Phase 01 · Foundations",    "title": "Math & Python Mastery",    "desc": "Linear algebra, calculus, probability theory, and clean Python are the non-negotiable bedrock.",                                               "skills": ["Linear Algebra", "Calculus", "Probability", "Py"],  "type": "pu"},
+        {"tag": "Phase 02 · Frameworks",     "title": "Deep Learning Tools",      "desc": "Build and train neural networks with PyTorch and TensorFlow. Understand modern architectures deeply.",                                          "skills": ["PyTorch", "TensorFlow", "Keras", "JAX"],            "type": "bl"},
+        {"tag": "Phase 03 · MLOps",          "title": "Production ML Systems",    "desc": "Deploy, monitor, retrain, and scale ML models. Own the full lifecycle from experiment to production.",                                          "skills": ["Docker", "Kubernetes", "MLflow", "Airflow"],        "type": "gr"},
+        {"tag": "Phase 04 · Specialisation", "title": "Choose Your Domain",       "desc": "Pick NLP, Computer Vision, Recommender Systems, or Reinforcement Learning — then go extremely deep.",                                          "skills": ["Transformers", "YOLO", "RecSys", "RL"],             "type": "pu"},
+        {"tag": "Phase 05 · Research",       "title": "Contribute & Publish",     "desc": "Read arXiv papers, reproduce results, contribute to Hugging Face, and build an open research presence.",                                        "skills": ["arXiv", "Papers With Code", "HF", "GitHub"],        "type": "bl"},
     ],
     "web developer": [
-        {"tag":"Phase 01 · Foundations","title":"The Web Triad","desc":"Master HTML, CSS, and JavaScript from scratch. Build responsive, accessible layouts without frameworks.","skills":["HTML5","CSS3","JavaScript ES6+","Flexbox/Grid"],"type":"purple"},
-        {"tag":"Phase 02 · Frontend","title":"React & Modern Tooling","desc":"Learn React deeply — state, hooks, performance. Add TypeScript, Webpack/Vite, and testing to your stack.","skills":["React","Next.js","TypeScript","Redux"],"type":"blue"},
-        {"tag":"Phase 03 · Backend","title":"Servers & Databases","desc":"Build REST APIs and connect to databases. Understand auth, ORMs, and scalability basics.","skills":["Node.js","Express","PostgreSQL","GraphQL"],"type":"green"},
-        {"tag":"Phase 04 · Quality","title":"Performance & Testing","desc":"Optimise Core Web Vitals, write automated tests, set up CI/CD, and improve developer experience.","skills":["Jest / Cypress","Lighthouse","GitHub Actions","Docker"],"type":"purple"},
-        {"tag":"Phase 05 · Ship","title":"Portfolio & Launch","desc":"Deploy real projects to Vercel or Netlify and build a personal portfolio that stands out.","skills":["Vercel / Netlify","GitHub","Portfolio Site","Open Source"],"type":"blue"},
+        {"tag": "Phase 01 · Foundations",    "title": "The Web Triad",            "desc": "Master HTML, CSS, and JavaScript from scratch. Build responsive, accessible layouts without frameworks.",                                       "skills": ["HTML5", "CSS3", "JavaScript ES6+", "Flex/Grid"],    "type": "pu"},
+        {"tag": "Phase 02 · Frontend",       "title": "React & Modern Tooling",   "desc": "Learn React deeply — state, hooks, performance. Add TypeScript and Vite to your workflow.",                                                     "skills": ["React", "Next.js", "TypeScript", "Redux"],          "type": "bl"},
+        {"tag": "Phase 03 · Backend",        "title": "Servers & Databases",      "desc": "Build REST APIs and connect to databases. Understand auth, ORMs, and basic scalability concepts.",                                              "skills": ["Node.js", "Express", "PostgreSQL", "GraphQL"],      "type": "gr"},
+        {"tag": "Phase 04 · Quality",        "title": "Performance & Testing",    "desc": "Optimise Core Web Vitals, write automated tests, set up CI/CD, and sharpen developer experience.",                                              "skills": ["Jest / Cypress", "Lighthouse", "Docker", "CI/CD"],  "type": "pu"},
+        {"tag": "Phase 05 · Ship",           "title": "Portfolio & Launch",       "desc": "Deploy real projects to Vercel or Netlify and build a personal portfolio that genuinely stands out.",                                           "skills": ["Vercel / Netlify", "GitHub", "Portfolio", "OSS"],   "type": "bl"},
     ],
     "ux designer": [
-        {"tag":"Phase 01 · Foundations","title":"Design Principles","desc":"Study Gestalt theory, typography, colour, layout, and accessibility standards for digital products.","skills":["Typography","Colour Theory","Gestalt","WCAG"],"type":"purple"},
-        {"tag":"Phase 02 · Research","title":"UX Research Methods","desc":"Master user interviews, usability testing, affinity mapping, and persona creation workflows.","skills":["User Interviews","Usability Testing","Personas","Journey Maps"],"type":"blue"},
-        {"tag":"Phase 03 · Tools","title":"Figma & Prototyping","desc":"Become proficient in Figma — auto layout, design systems, interactive prototypes, and handoff.","skills":["Figma","Prototyping","Design Systems","Auto Layout"],"type":"green"},
-        {"tag":"Phase 04 · Portfolio","title":"Case Study Portfolio","desc":"Document three redesign or original projects with clear problem statements, process, and outcomes.","skills":["Case Studies","Behance","Dribbble","Portfolio Site"],"type":"purple"},
-        {"tag":"Phase 05 · Collaboration","title":"Developer Partnership","desc":"Work in cross-functional teams, communicate decisions clearly, and deliver precise developer handoffs.","skills":["Dev Handoff","Zeplin","Agile/Scrum","A/B Testing"],"type":"blue"},
+        {"tag": "Phase 01 · Foundations",    "title": "Design Principles",        "desc": "Study Gestalt theory, typography, colour, layout, and accessibility standards for digital products.",                                           "skills": ["Typography", "Colour Theory", "Gestalt", "WCAG"],   "type": "pu"},
+        {"tag": "Phase 02 · Research",       "title": "UX Research Methods",      "desc": "Master user interviews, usability testing, affinity mapping, and persona creation workflows.",                                                  "skills": ["Interviews", "Usability Tests", "Personas", "JMs"], "type": "bl"},
+        {"tag": "Phase 03 · Tools",          "title": "Figma & Prototyping",      "desc": "Become proficient in Figma — auto layout, design systems, interactive prototypes, and dev handoff.",                                           "skills": ["Figma", "Prototyping", "Design Systems", "Auto"],   "type": "gr"},
+        {"tag": "Phase 04 · Portfolio",      "title": "Case Study Portfolio",     "desc": "Document three redesign or original projects with clear problem statements, process, and outcomes.",                                             "skills": ["Case Studies", "Behance", "Dribbble", "Portfolio"], "type": "pu"},
+        {"tag": "Phase 05 · Collaboration",  "title": "Developer Partnership",    "desc": "Work in cross-functional teams, communicate decisions clearly, and deliver precise developer handoffs.",                                        "skills": ["Dev Handoff", "Zeplin", "Agile/Scrum", "A/B"],      "type": "bl"},
     ],
     "product manager": [
-        {"tag":"Phase 01 · Foundations","title":"Product Thinking","desc":"Understand user needs, define product vision, and learn market positioning and competitive analysis.","skills":["User Research","Jobs-to-be-Done","Competitive Analysis"],"type":"purple"},
-        {"tag":"Phase 02 · Strategy","title":"Roadmaps & Prioritisation","desc":"Learn OKRs, RICE, MoSCoW, and write clear, actionable product requirements documents.","skills":["OKRs","RICE","Roadmaps","PRDs"],"type":"blue"},
-        {"tag":"Phase 03 · Data","title":"Analytics & Experimentation","desc":"Drive decisions with product analytics. Master funnels, retention, cohort analysis, and A/B testing.","skills":["Mixpanel","SQL","A/B Testing","Cohort Analysis"],"type":"green"},
-        {"tag":"Phase 04 · Execution","title":"Agile Leadership","desc":"Lead sprints, manage engineering relationships, and ship products iteratively and on schedule.","skills":["Jira","Agile","Scrum","Stakeholder Mgmt"],"type":"purple"},
-        {"tag":"Phase 05 · Career","title":"PM Portfolio","desc":"Build side projects, document case studies, and target Associate PM programmes at top companies.","skills":["Case Studies","PM Certs","Networking","APM Roles"],"type":"blue"},
+        {"tag": "Phase 01 · Foundations",    "title": "Product Thinking",         "desc": "Understand user needs, define product vision, and learn market positioning and competitive analysis.",                                          "skills": ["User Research", "JTBD", "Competitive Analysis"],    "type": "pu"},
+        {"tag": "Phase 02 · Strategy",       "title": "Roadmaps & Prioritisation","desc": "Learn OKRs, RICE, MoSCoW, and write clear, actionable product requirements documents.",                                                        "skills": ["OKRs", "RICE", "Roadmaps", "PRDs"],                 "type": "bl"},
+        {"tag": "Phase 03 · Data",           "title": "Analytics & Experiments",  "desc": "Drive decisions with product analytics. Master funnels, retention, cohort analysis, and A/B testing.",                                         "skills": ["Mixpanel", "SQL", "A/B Testing", "Cohorts"],        "type": "gr"},
+        {"tag": "Phase 04 · Execution",      "title": "Agile Leadership",         "desc": "Lead sprints, manage engineering relationships, and ship products iteratively and on schedule.",                                                "skills": ["Jira", "Agile", "Scrum", "Stakeholder Mgmt"],       "type": "pu"},
+        {"tag": "Phase 05 · Career",         "title": "PM Portfolio",             "desc": "Build side projects, document case studies, and target Associate PM programmes at top tech companies.",                                         "skills": ["Case Studies", "PM Certs", "Networking", "APM"],    "type": "bl"},
     ],
     "data analyst": [
-        {"tag":"Phase 01 · Foundations","title":"SQL & Excel","desc":"Data manipulation in Excel, then SQL for querying large structured datasets efficiently.","skills":["Excel","SQL","Pivot Tables","Joins & Aggregations"],"type":"purple"},
-        {"tag":"Phase 02 · Python","title":"Python for Analysis","desc":"Automate analysis workflows with Python. Master Pandas, NumPy, and visualisation libraries.","skills":["Python","Pandas","Matplotlib","Seaborn"],"type":"blue"},
-        {"tag":"Phase 03 · Visualisation","title":"Dashboards & BI","desc":"Build executive-ready dashboards and business intelligence reports with Tableau or Power BI.","skills":["Tableau","Power BI","Looker","Streamlit"],"type":"green"},
-        {"tag":"Phase 04 · Statistics","title":"Statistical Analysis","desc":"Apply hypothesis testing, regression, and A/B experiment design to answer business questions.","skills":["Statistics","Hypothesis Testing","Regression","A/B Tests"],"type":"purple"},
-        {"tag":"Phase 05 · Portfolio","title":"Public Work","desc":"Share analyses on GitHub, write explanatory articles on Medium, and solve Kaggle datasets publicly.","skills":["Kaggle","GitHub","Medium Blog","Public APIs"],"type":"blue"},
+        {"tag": "Phase 01 · Foundations",    "title": "SQL & Excel",              "desc": "Data manipulation in Excel, then SQL for querying large structured datasets efficiently and accurately.",                                       "skills": ["Excel", "SQL", "Pivot Tables", "Joins & Aggs"],     "type": "pu"},
+        {"tag": "Phase 02 · Python",         "title": "Python for Analysis",      "desc": "Automate analysis workflows with Python. Master Pandas, NumPy, and key visualisation libraries.",                                              "skills": ["Python", "Pandas", "Matplotlib", "Seaborn"],        "type": "bl"},
+        {"tag": "Phase 03 · Visualisation",  "title": "Dashboards & BI",          "desc": "Build executive-ready dashboards and business intelligence reports with Tableau or Power BI.",                                                 "skills": ["Tableau", "Power BI", "Looker", "Streamlit"],       "type": "gr"},
+        {"tag": "Phase 04 · Statistics",     "title": "Statistical Analysis",     "desc": "Apply hypothesis testing, regression, and A/B experiment design to answer real business questions.",                                            "skills": ["Statistics", "Hypothesis Testing", "Regression"],   "type": "pu"},
+        {"tag": "Phase 05 · Portfolio",      "title": "Public Work",              "desc": "Share analyses on GitHub, write articles on Medium, and solve Kaggle datasets to build credibility.",                                          "skills": ["Kaggle", "GitHub", "Medium Blog", "Public APIs"],   "type": "bl"},
     ],
     "cybersecurity analyst": [
-        {"tag":"Phase 01 · Foundations","title":"Networking & Linux","desc":"Master TCP/IP, DNS, firewalls, and Linux command line. Analyse network traffic with Wireshark.","skills":["TCP/IP","DNS","Wireshark","Linux CLI"],"type":"purple"},
-        {"tag":"Phase 02 · Security Core","title":"Attack Vectors & Defence","desc":"Learn cryptography, authentication protocols, OWASP Top 10, and common vulnerability patterns.","skills":["Cryptography","OWASP Top 10","PKI","Auth Protocols"],"type":"blue"},
-        {"tag":"Phase 03 · Offensive","title":"Ethical Hacking","desc":"Practice through CTF challenges and pentesting labs. Build hands-on experience safely.","skills":["Kali Linux","Metasploit","Burp Suite","CTFs"],"type":"green"},
-        {"tag":"Phase 04 · Certifications","title":"Industry Credentials","desc":"Earn recognised certifications to validate your expertise to potential employers.","skills":["CompTIA Security+","CEH","OSCP","CISSP"],"type":"purple"},
-        {"tag":"Phase 05 · SOC","title":"Incident Response","desc":"Detect, respond to, contain, and recover from real-world security incidents inside a SOC.","skills":["SIEM","Splunk","Incident Response","Threat Intel"],"type":"blue"},
+        {"tag": "Phase 01 · Foundations",    "title": "Networking & Linux",       "desc": "Master TCP/IP, DNS, firewalls, and Linux CLI. Analyse network traffic with Wireshark confidently.",                                            "skills": ["TCP/IP", "DNS", "Wireshark", "Linux CLI"],          "type": "pu"},
+        {"tag": "Phase 02 · Security Core",  "title": "Attack Vectors & Defence", "desc": "Learn cryptography, authentication protocols, OWASP Top 10, and common vulnerability patterns.",                                              "skills": ["Cryptography", "OWASP Top 10", "PKI", "Auth"],      "type": "bl"},
+        {"tag": "Phase 03 · Offensive",      "title": "Ethical Hacking",          "desc": "Practice through CTF challenges and pentesting labs. Build genuine hands-on experience safely.",                                               "skills": ["Kali Linux", "Metasploit", "Burp Suite", "CTFs"],   "type": "gr"},
+        {"tag": "Phase 04 · Certifications", "title": "Industry Credentials",     "desc": "Earn recognised certifications that validate your expertise and open doors with employers.",                                                   "skills": ["CompTIA Sec+", "CEH", "OSCP", "CISSP"],             "type": "pu"},
+        {"tag": "Phase 05 · SOC",            "title": "Incident Response",        "desc": "Detect, respond to, contain, and recover from real-world security incidents inside a SOC environment.",                                        "skills": ["SIEM", "Splunk", "Incident Response", "Threat Intel"],"type": "bl"},
     ],
 }
 
-# ══════════════════════════════════════════════════════════════════════
+
+# ═════════════════════════════════════════════════════════════
 # CHATBOT KNOWLEDGE BASE
-# ══════════════════════════════════════════════════════════════════════
-CHATBOT_KB = {
+# ═════════════════════════════════════════════════════════════
+CHATBOT_KB: dict[str, dict[str, str]] = {
     "_general": {
-        "salary":        "Salaries vary widely by location and experience. In India, entry-level tech roles range from 4 to 12 LPA; senior roles reach 25–60 LPA. In the US, junior engineers earn 70–110K USD; seniors often exceed 150K USD.",
-        "internship":    "To land internships: build 2–3 projects on GitHub, connect actively with founders and HRs on LinkedIn, and apply via Internshala, Unstop, AngelList, and LinkedIn. Thoughtful cold emails work surprisingly well.",
-        "resume":        "A strong resume is one page, ATS-friendly, and highlights measurable impact using numbers. Use the STAR format for experience bullets. Use the Resume Analyzer tab for personalised feedback.",
-        "certifications":"Certifications add real credibility. Prioritise: Google, AWS, Microsoft, Coursera, or edX certs that align directly with your target career path.",
+        "salary":        "Salaries vary widely. In India, entry-level tech roles range 4–12 LPA; senior roles reach 25–60 LPA. In the US, junior engineers earn 70–110K USD; senior roles often exceed 150K USD.",
+        "internship":    "To land internships: build 2–3 projects on GitHub, connect with founders and HRs on LinkedIn, and apply via Internshala, Unstop, AngelList, and LinkedIn. Thoughtful cold emails work surprisingly well.",
+        "resume":        "A strong resume is one page, ATS-friendly, and highlights measurable impact using numbers. Use the STAR format for experience bullets. Try the Resume Analyzer tab above for personalised feedback.",
+        "certifications":"Certifications add real credibility. Prioritise Google, AWS, Microsoft, Coursera, or edX certs that align directly with your target career path.",
         "college":       "Your college name helps open doors but is far from the whole story. A strong GitHub portfolio, live projects, and clear communication often outweigh institution prestige at most companies.",
     },
     "software developer": {
-        "skills":    "Master: Python or JavaScript, DSA, REST APIs, React (frontend), Django or Node.js (backend), Docker, and Git. TypeScript is increasingly essential.",
+        "skills":    "Master: Python or JavaScript, DSA, REST APIs, React (frontend), Django or Node.js (backend), Docker, and Git. TypeScript is increasingly essential at top companies.",
         "start":     "Start with Python fundamentals, build a CRUD app, learn React, connect frontend and backend, then deploy. Aim for three live deployed projects within six months.",
         "next":      "After the basics: learn TypeScript, system design patterns, contribute to open-source, and solve 100+ LeetCode medium problems consistently.",
-        "projects":  "Build: 1) A task manager with authentication, 2) A real-time chat app, 3) A well-documented REST API. All three should be live, deployed, and on GitHub.",
+        "projects":  "Build: 1) A task manager with auth, 2) A real-time chat app, 3) A well-documented REST API. All three should be live, deployed, and on GitHub.",
         "interview": "Practice DSA on LeetCode daily, study system design via Grokking the System Design Interview, and do mock interviews on Pramp or interviewing.io.",
     },
     "data scientist": {
         "skills":    "Master: Python, Pandas, NumPy, scikit-learn, SQL, Statistics, Matplotlib or Seaborn, and at least one deep learning framework such as PyTorch or TensorFlow.",
-        "start":     "Python first, then Statistics, then Pandas, then ML with scikit-learn, then your first Kaggle notebook. Introduce deep learning incrementally.",
+        "start":     "Python first, then Statistics, then Pandas, then ML with scikit-learn, then your first Kaggle notebook. Introduce deep learning incrementally afterward.",
         "next":      "Specialise in NLP with Hugging Face, Computer Vision with CNNs, or MLOps with MLflow and Docker. Go deep in one area rather than shallow across many.",
-        "projects":  "Build: 1) A full EDA and prediction notebook on Kaggle, 2) A tweet sentiment analyser, 3) A deployed ML model as a Streamlit or FastAPI app.",
+        "projects":  "Build: 1) A full EDA and prediction notebook on Kaggle, 2) A sentiment analyser, 3) A deployed ML model as a Streamlit or FastAPI app.",
         "interview": "Revise bias-variance tradeoff, regularisation, and ensemble methods. Practice SQL. Prepare a strong end-to-end project walkthrough.",
     },
     "machine learning engineer": {
-        "skills":    "Core: Python, Linear Algebra, PyTorch or TensorFlow, MLOps tools (Docker, Kubernetes, MLflow), FastAPI for model serving, and cloud platforms like AWS SageMaker.",
-        "start":     "Math foundations, then Python, then ML theory, then PyTorch, then train your first models, then MLOps, then deploy a model to production.",
+        "skills":    "Core: Python, Linear Algebra, PyTorch or TensorFlow, MLOps tools like Docker and Kubernetes, FastAPI for model serving, and cloud platforms like AWS SageMaker.",
+        "start":     "Math foundations → Python → ML theory → PyTorch → train your first models → MLOps → deploy a model to production.",
         "next":      "Specialise in NLP, Computer Vision, or Reinforcement Learning. Contribute to Hugging Face or Papers With Code. Target MLE roles at AI-first companies.",
         "projects":  "Build: 1) A fine-tuned LLM application, 2) A computer vision classifier deployed as an API, 3) A recommender system with offline and online evaluation.",
         "interview": "Prepare ML system design questions, Python exercises, model debugging scenarios, and a detailed walkthrough of an end-to-end ML project.",
     },
     "web developer": {
-        "skills":    "HTML, CSS, JavaScript (deeply), React, Node.js or Express, SQL or MongoDB, REST APIs, TypeScript, Docker, and CI/CD pipelines.",
-        "start":     "Clone a simple website, build your portfolio, add a backend, connect a database, then deploy. Ship something real within three months.",
+        "skills":    "HTML, CSS, JavaScript deeply, then React, Node.js or Express, SQL or MongoDB, REST APIs, TypeScript, Docker, and CI/CD pipelines.",
+        "start":     "Clone a simple website, build your own portfolio, add a backend, connect a database, then deploy. Ship something real within three months.",
         "next":      "TypeScript, Jest and Cypress for testing, Core Web Vitals optimisation, and cloud fundamentals with AWS or Vercel.",
         "projects":  "Build: 1) Personal portfolio site, 2) A SaaS landing page with auth, 3) A real-time collaboration tool with WebSockets.",
         "interview": "Focus on JavaScript fundamentals, React internals, REST API design, and one full-stack project you can discuss in full technical depth.",
@@ -793,7 +534,7 @@ CHATBOT_KB = {
         "start":     "Learn design principles, use Figma daily, redesign three popular apps, and document each process as a detailed case study.",
         "next":      "Go deep on UX research through user interviews and usability testing. Explore motion design with Lottie or Framer. Collaborate on real product teams.",
         "projects":  "Build: 1) A redesign case study with before/after, 2) A new app concept with a full Figma prototype, 3) A reusable design system component library.",
-        "interview": "Present case studies clearly. Explain every design decision and its rationale. Walk through your complete research and ideation process step by step.",
+        "interview": "Present case studies clearly. Explain every design decision and its rationale. Walk through your complete research and ideation process.",
     },
     "product manager": {
         "skills":    "Product thinking, roadmapping frameworks, SQL, user research, A/B testing, stakeholder communication, and Agile or Scrum methodology.",
@@ -804,45 +545,46 @@ CHATBOT_KB = {
     },
     "data analyst": {
         "skills":    "SQL is essential. Then Excel, Python with Pandas, Tableau or Power BI for dashboards, Statistics for interpretation, and storytelling with data.",
-        "start":     "SQL, then Excel, then Python basics, then Pandas, then build your first interactive dashboard in Tableau or Power BI.",
-        "next":      "A/B testing, statistical modelling, Python automation, and telling data stories that directly influence business strategy.",
+        "start":     "SQL → Excel → Python basics → Pandas → build your first interactive dashboard in Tableau or Power BI.",
+        "next":      "A/B testing methodology, statistical modelling, Python automation, and telling data stories that directly influence business strategy.",
         "projects":  "Build: 1) A sales dashboard in Tableau, 2) A full EDA report on a public dataset, 3) An automated Python report delivered via email.",
         "interview": "Practice SQL joins and aggregations, walk through past analyses, and explain how you converted data insights into concrete business actions.",
     },
     "cybersecurity analyst": {
-        "skills":    "Networking fundamentals (TCP/IP, DNS), Linux command line, Python scripting, Wireshark, Burp Suite for web app testing, and SIEM tools.",
-        "start":     "Networking fundamentals, then Linux, then Python scripting, then OWASP Top 10, then CTF challenges on HackTheBox or TryHackMe.",
-        "next":      "Specialise in penetration testing, threat intelligence, SOC analysis, or cloud security. Pursue CompTIA Security+ as your first major certification.",
+        "skills":    "Networking fundamentals (TCP/IP, DNS), Linux CLI, Python scripting, Wireshark, Burp Suite for web app testing, and SIEM tools.",
+        "start":     "Networking fundamentals → Linux → Python scripting → OWASP Top 10 → CTF challenges on HackTheBox or TryHackMe.",
+        "next":      "Specialise in penetration testing, threat intelligence, SOC analysis, or cloud security. Pursue CompTIA Security+ as your first major cert.",
         "projects":  "Complete: 1) The TryHackMe beginner path, 2) A Kali Linux home lab setup, 3) A written vulnerability assessment report for a sample target.",
-        "interview": "Expect: networking protocol questions, SQLi and XSS attack mechanics, incident response procedures, and deep dives into your lab work.",
+        "interview": "Expect networking protocol questions, SQLi and XSS attack mechanics, incident response procedures, and deep dives into your lab work.",
     },
 }
 
-INTENT_MAP = {
-    "skills":        ["skill","learn","what should i","which tech","language","tool","know","technology","need to study"],
-    "start":         ["start","begin","new to","how to get","roadmap","first step","where do i","getting started"],
-    "next":          ["next","after","advanced","already know","improve","level up","what else","progression"],
-    "projects":      ["project","portfolio","build","practice","example","idea","make","create"],
-    "interview":     ["interview","prepare","crack","question","job","hiring","placement","selection"],
-    "salary":        ["salary","pay","earn","money","package","lpa","ctc","compensation","income"],
-    "internship":    ["intern","internship","experience","fresher","entry level","placement"],
-    "resume":        ["resume","cv","profile","ats","curriculum vitae"],
-    "certifications":["cert","certification","course","udemy","coursera","mooc","badge","credential"],
-    "college":       ["college","degree","tier","nit","iit","university","campus","institution"],
+INTENT_MAP: dict[str, list[str]] = {
+    "skills":        ["skill", "learn", "what should i", "which tech", "language", "tool", "know", "technology", "need to study"],
+    "start":         ["start", "begin", "new to", "how to get", "roadmap", "first step", "where do i", "getting started"],
+    "next":          ["next", "after", "advanced", "already know", "improve", "level up", "what else", "progression"],
+    "projects":      ["project", "portfolio", "build", "practice", "example", "idea", "make", "create"],
+    "interview":     ["interview", "prepare", "crack", "question", "job", "hiring", "placement"],
+    "salary":        ["salary", "pay", "earn", "money", "package", "lpa", "ctc", "compensation", "income"],
+    "internship":    ["intern", "internship", "experience", "fresher", "entry level", "placement"],
+    "resume":        ["resume", "cv", "profile", "ats", "curriculum vitae"],
+    "certifications":["cert", "certification", "course", "udemy", "coursera", "mooc", "badge", "credential"],
+    "college":       ["college", "degree", "tier", "nit", "iit", "university", "campus", "institution"],
 }
 
+
 def detect_intent(msg: str) -> str:
-    """Identify the user's intent from a chat message."""
+    """Identify user intent from a chat message."""
     msg_l = msg.lower()
     for intent, keywords in INTENT_MAP.items():
         if any(k in msg_l for k in keywords):
             return intent
     return "unknown"
 
+
 def chatbot_response(user_msg: str, career: str) -> str:
     """
-    Rule-based chatbot response engine.
-    Tries career-specific answers first, falls back to general KB.
+    Rule-based chatbot.  Career-specific answers first, general KB fallback.
     """
     career_l   = career.lower().strip()
     intent     = detect_intent(user_msg)
@@ -854,38 +596,38 @@ def chatbot_response(user_msg: str, career: str) -> str:
     if intent != "unknown" and intent in kb_general:
         return kb_general[intent]
 
-    # Keyword scan fallback
     msg_l = user_msg.lower()
     for key, val in kb_career.items():
         if key in msg_l:
             return val
 
     return (
-        f"That is a great question for someone exploring {career.title()}! "
-        f"I can help you with: skills to learn, how to get started, project ideas, "
-        f"interview preparation, salary expectations, or internship advice. "
-        f"What would you like to know more about?"
+        f"Great question! For a {career.title()} career, I can help with: "
+        f"skills to learn, how to get started, project ideas, interview tips, "
+        f"salary expectations, or internship advice. What would you like to explore?"
     )
 
-# ══════════════════════════════════════════════════════════════════════
+
+# ═════════════════════════════════════════════════════════════
 # RESUME ANALYZER
-# ══════════════════════════════════════════════════════════════════════
-RESUME_KEYWORDS = {
-    "default":              ["Python","project","team","experience","skills","education","GitHub","communication"],
-    "software developer":   ["Python","JavaScript","React","Node","API","SQL","Docker","Git","testing","deployment","agile","CI/CD"],
-    "data scientist":       ["Python","machine learning","TensorFlow","PyTorch","pandas","scikit","SQL","statistics","model","Kaggle","deep learning","EDA"],
-    "machine learning engineer": ["PyTorch","TensorFlow","MLOps","model deployment","Docker","Kubernetes","pipeline","NLP","computer vision","MLflow","API"],
-    "web developer":        ["HTML","CSS","JavaScript","React","Node","REST","API","responsive","TypeScript","deployment","database","frontend","backend"],
-    "ux designer":          ["Figma","user research","prototype","wireframe","usability","design system","accessibility","case study","UI","UX","user testing"],
-    "product manager":      ["roadmap","stakeholder","OKR","user research","A/B test","agile","sprint","metrics","strategy","product","KPI","launch"],
-    "data analyst":         ["SQL","Excel","Tableau","Power BI","Python","dashboard","KPI","report","analysis","statistics","visualisation"],
-    "cybersecurity analyst":["penetration","SIEM","firewall","vulnerability","Kali","network","incident response","cryptography","security","compliance","threat"],
+# ═════════════════════════════════════════════════════════════
+RESUME_KEYWORDS: dict[str, list[str]] = {
+    "default":              ["Python", "project", "team", "experience", "skills", "education", "GitHub"],
+    "software developer":   ["Python", "JavaScript", "React", "Node", "API", "SQL", "Docker", "Git", "testing", "deployment", "agile"],
+    "data scientist":       ["Python", "machine learning", "TensorFlow", "PyTorch", "pandas", "scikit", "SQL", "statistics", "model", "Kaggle", "deep learning"],
+    "machine learning engineer": ["PyTorch", "TensorFlow", "MLOps", "model deployment", "Docker", "Kubernetes", "pipeline", "NLP", "computer vision", "MLflow"],
+    "web developer":        ["HTML", "CSS", "JavaScript", "React", "Node", "REST", "API", "responsive", "TypeScript", "deployment", "database"],
+    "ux designer":          ["Figma", "user research", "prototype", "wireframe", "usability", "design system", "accessibility", "case study", "UI", "UX"],
+    "product manager":      ["roadmap", "stakeholder", "OKR", "user research", "A/B test", "agile", "sprint", "metrics", "strategy", "product"],
+    "data analyst":         ["SQL", "Excel", "Tableau", "Power BI", "Python", "dashboard", "KPI", "report", "analysis", "statistics"],
+    "cybersecurity analyst":["penetration", "SIEM", "firewall", "vulnerability", "Kali", "network", "incident response", "cryptography", "security", "compliance"],
 }
+
 
 def analyze_resume(text: str, career: str) -> dict:
     """
-    Score a resume against career-specific keywords and structural signals.
-    Returns score (0–100), grade (A–D), matched/missing keywords, and suggestions.
+    Score resume (0–100) against career-specific keywords + structural signals.
+    Returns score, grade (A–D), matched/missing keywords, and improvement suggestions.
     """
     career_l   = career.lower().strip()
     keywords   = RESUME_KEYWORDS.get(career_l, RESUME_KEYWORDS["default"])
@@ -894,15 +636,14 @@ def analyze_resume(text: str, career: str) -> dict:
     matched = [k for k in keywords if k.lower() in text_lower]
     missing = [k for k in keywords if k.lower() not in text_lower]
 
-    # Scoring components
     kw_score   = (len(matched) / max(len(keywords), 1)) * 48
     length_ok  = 180 < len(text.split()) < 750
-    has_github = "github" in text_lower
-    has_nums   = bool(re.search(r"\d+\s*%|\d+x|\$[\d,]+|₹[\d,]+|\d+\s*(users|clients|projects)", text, re.I))
-    has_action = any(w in text_lower for w in ["built","developed","designed","led","improved",
-                     "reduced","increased","deployed","created","launched","optimised","automated","delivered"])
-    has_edu    = any(w in text_lower for w in ["b.tech","b.e","bsc","msc","bachelor","master","degree","cgpa","gpa"])
-    has_contact = any(w in text_lower for w in ["email","phone","linkedin","@","mobile"])
+    has_github  = "github" in text_lower
+    has_nums    = bool(re.search(r"\d+\s*%|\d+x|\$[\d,]+|₹[\d,]+|\d+\s*(users|clients|projects)", text, re.I))
+    has_action  = any(w in text_lower for w in ["built", "developed", "designed", "led", "improved",
+                      "reduced", "increased", "deployed", "created", "launched", "optimised", "automated"])
+    has_edu     = any(w in text_lower for w in ["b.tech", "b.e", "bsc", "msc", "bachelor", "master", "degree", "cgpa", "gpa"])
+    has_contact = any(w in text_lower for w in ["email", "phone", "linkedin", "@", "mobile"])
 
     bonus = sum([
         has_github  * 9,
@@ -910,33 +651,30 @@ def analyze_resume(text: str, career: str) -> dict:
         has_action  * 8,
         has_edu     * 5,
         has_contact * 4,
-        (14 if length_ok else 3),
+        14 if length_ok else 3,
     ])
     score = max(0, min(100, int(kw_score + bonus)))
     grade = "A" if score >= 80 else ("B" if score >= 60 else ("C" if score >= 40 else "D"))
 
-    # Suggestions
-    suggestions = []
+    suggestions: list[tuple[str, str]] = []
     if len(matched) < len(keywords) * 0.5:
-        top_missing = ", ".join(missing[:4])
-        suggestions.append(("warning", f"Add key {career.title()} terms: {top_missing}"))
+        suggestions.append(("⚠️", f"Add key {career.title()} terms: {', '.join(missing[:4])}"))
     if not has_nums:
-        suggestions.append(("chart",   "Quantify achievements — use numbers, percentages, or scale metrics"))
+        suggestions.append(("📊", "Quantify achievements — add numbers, percentages, or scale metrics"))
     if not has_github:
-        suggestions.append(("link",    "Add your GitHub profile link to showcase real code and projects"))
+        suggestions.append(("🔗", "Add your GitHub profile URL to showcase real code and projects"))
     if not has_action:
-        suggestions.append(("rocket",  "Start every bullet with an action verb: Built, Deployed, Optimised, Led"))
+        suggestions.append(("🚀", "Start every bullet with an action verb: Built, Deployed, Optimised, Led"))
     if not length_ok:
-        msg = ("Your resume appears too short — expand your project and experience sections"
-               if len(text.split()) <= 180
-               else "Your resume is long — aim for one page (approx. 400–600 words)")
-        suggestions.append(("doc", msg))
+        msg = ("Expand your resume — add more project detail and experience" if len(text.split()) <= 180
+               else "Trim to one page — aim for roughly 400–600 words of content")
+        suggestions.append(("📄", msg))
     if not has_edu:
-        suggestions.append(("grad",  "Include your educational qualifications clearly (degree, institution, year, CGPA)"))
+        suggestions.append(("🎓", "Include qualifications clearly: degree, institution, year, and CGPA"))
     if not has_contact:
-        suggestions.append(("phone", "Ensure your contact information (email, phone, LinkedIn) is clearly visible"))
+        suggestions.append(("📞", "Ensure your contact info (email, phone, LinkedIn) is clearly visible"))
     if not suggestions:
-        suggestions.append(("check", "Strong resume! Consider a peer review or running it through an ATS checker."))
+        suggestions.append(("✅", "Strong resume! Consider a peer review or running it through an ATS checker."))
 
     return {
         "score":       score,
@@ -946,10 +684,11 @@ def analyze_resume(text: str, career: str) -> dict:
         "suggestions": suggestions,
     }
 
-# ══════════════════════════════════════════════════════════════════════
-# CAREER ICON MAPPING
-# ══════════════════════════════════════════════════════════════════════
-CAREER_ICONS = {
+
+# ═════════════════════════════════════════════════════════════
+# CAREER ICON MAP
+# ═════════════════════════════════════════════════════════════
+_CAREER_ICONS: dict[str, str] = {
     "software developer":        "💻",
     "data scientist":            "📊",
     "machine learning engineer": "🤖",
@@ -968,56 +707,59 @@ CAREER_ICONS = {
 }
 
 def career_icon(career: str) -> str:
-    """Return emoji for a career string."""
     c = career.lower()
-    for key, icon in CAREER_ICONS.items():
+    for key, icon in _CAREER_ICONS.items():
         if key in c:
             return icon
     return "🚀"
 
-# ══════════════════════════════════════════════════════════════════════
-# MODEL LOADING
-# ══════════════════════════════════════════════════════════════════════
+
+# ═════════════════════════════════════════════════════════════
+# MODEL — loads career_model.pkl
+# ═════════════════════════════════════════════════════════════
 @st.cache_resource(show_spinner=False)
-def load_model():
-    """Load career_model.pkl safely with error handling."""
+def load_model() -> tuple:
+    """
+    Safely load career_model.pkl from the same directory as app.py.
+    Returns (model, error_string_or_None).
+    """
     path = os.path.join(BASE_DIR, "career_model.pkl")
     if not os.path.exists(path):
         return None, "career_model.pkl not found — place it in the same folder as app.py"
     try:
         with open(path, "rb") as f:
-            model = pickle.load(f)
-        return model, None
-    except Exception as e:
-        return None, f"Failed to load model: {e}"
+            return pickle.load(f), None
+    except Exception as exc:
+        return None, f"Failed to load model: {exc}"
 
-# ══════════════════════════════════════════════════════════════════════
-# QUIZ → FEATURES MAPPING
-# ══════════════════════════════════════════════════════════════════════
-def quiz_to_features(answers: list) -> np.ndarray:
+
+# ═════════════════════════════════════════════════════════════
+# QUIZ → 23-FEATURE VECTOR
+# ═════════════════════════════════════════════════════════════
+def quiz_to_features(answers: list[int]) -> np.ndarray:
     """
-    Convert 15 quiz answer indices (0–3) into a 23-feature numerical vector
-    that matches the training schema of career_model.pkl.
+    Convert 15 quiz answer indices (0–3) into a 23-feature float vector
+    matching the original training schema of career_model.pkl.
 
-    Feature order (mirrors original training data):
+    Feature index → description:
       [0]  logical quotient rating    (0–10)
       [1]  coding skills rating       (0–10)
-      [2]  hackathons                 (0–10)
+      [2]  hackathons attended        (0–10)
       [3]  public speaking points     (0–10)
       [4]  self-learning capability   (0/1)
-      [5]  extra courses did          (0/1)
-      [6]  certifications             (0–5)
-      [7]  workshops                  (0–5)
+      [5]  extra courses completed    (0/1)
+      [6]  certifications count       (0–5)
+      [7]  workshops attended         (0–5)
       [8]  reading & writing skills   (0–10)
       [9]  memory capability score    (0–10)
       [10] interested subjects        (encoded 1–7)
       [11] interested career area     (encoded 1–8)
-      [12] job / higher studies       (0/1)
-      [13] company type preference    (encoded 1–5)
-      [14] taken inputs from seniors  (0/1)
-      [15] interested book type       (encoded 1–5)
-      [16] management or technical    (0/1)
-      [17] hard / smart worker        (0/1)
+      [12] job vs. higher studies     (0/1)
+      [13] preferred company type     (encoded 1–5)
+      [14] taken advice from seniors  (0/1)
+      [15] preferred book type        (encoded 1–5)
+      [16] technical (1) / mgmt (0)   (0/1)
+      [17] smart (1) / hard (0) worker(0/1)
       [18] worked in teams            (0/1)
       [19] introvert                  (0/1)
       [20] academic percentage        (0–100)
@@ -1026,73 +768,72 @@ def quiz_to_features(answers: list) -> np.ndarray:
     """
     a = answers  # shorthand
 
-    # ── Raw signals derived from answers ──────────────────────────────
+    # ── Raw signals ────────────────────────────────────────────
     logical_boost  = 3 if a[0] == 0 else (1 if a[0] == 3 else 0)
-    creative_boost = 3 if a[0] == 1 else 0
-    social_boost   = 3 if a[0] == 2 else 0
     tech_boost     = 3 if a[1] == 0 else 0
-    design_boost   = 2 if a[1] == 1 else 0
+    social_boost   = 3 if a[0] == 2 else 0
     math_raw       = [9, 6, 3, 2][a[3]]
     ps_raw         = [9, 6, 3, 1][a[5]]
     pressure_bonus = [2, 1, 0, 0][a[6]]
     introvert_flag = 1 if a[7] == 0 else 0
     academic_pct   = [88, 72, 57, 45][a[8]]
-    self_learn     = 1 if a[9] in [0, 1] else 0
+    self_learn     = 1 if a[9]  in [0, 1] else 0
     hackathon_cnt  = [4, 2, 1, 0][a[10]]
     mgmt_flag      = 1 if a[13] == 2 else 0
     rw_raw         = [7, 6, 5, 9][a[12]]
     job_flag       = 1 if a[14] in [0, 1] else 0
 
-    # ── Composite scores ──────────────────────────────────────────────
+    # ── Composite scores ───────────────────────────────────────
     logical_score  = min(10, 5 + logical_boost + tech_boost + pressure_bonus)
     coding_score   = min(10, 4 + tech_boost + (2 if a[1] == 0 else 0) + (2 if a[4] == 0 else 0))
     soft_score     = min(10, 4 + social_boost + (2 if a[12] == 2 else 0))
     memory_score   = min(10, 5 + logical_boost + (2 if a[9] == 0 else 0))
-    cert_count     = min(5, 1 + (2 if a[9] in [0, 1] else 0) + (1 if a[10] in [0, 1] else 0))
+    cert_count     = min(5, 1 + (2 if a[9]  in [0, 1] else 0) + (1 if a[10] in [0, 1] else 0))
     workshop_count = min(5, 1 + (1 if a[10] in [0, 1] else 0) + (1 if a[11] in [0, 1] else 0))
 
-    # ── Encodings for categorical features ────────────────────────────
-    subject_enc = {0: 3, 1: 5, 2: 6, 3: 4}      # CS / Arts / Business / Science
-    career_enc  = {0: 1, 1: 4, 2: 6, 3: 2}       # Tech / Design / Mgmt / Research
-    company_enc = {0: 2, 1: 3, 2: 4, 3: 1}       # Remote / Studio / Corporate / Structured
-    book_enc    = {0: 2, 1: 4, 2: 3, 3: 1}       # Data / Visual / Conversational / Written
+    # ── Categorical encodings ──────────────────────────────────
+    subject_enc = {0: 3, 1: 5, 2: 6, 3: 4}   # CS/Arts/Business/Science
+    career_enc  = {0: 1, 1: 4, 2: 6, 3: 2}   # Tech/Design/Mgmt/Research
+    company_enc = {0: 2, 1: 3, 2: 4, 3: 1}   # Remote/Studio/Corporate/Structured
+    book_enc    = {0: 2, 1: 4, 2: 3, 3: 1}   # Data/Visual/Spoken/Written
 
     vector = [
-        logical_score,                        # [0]  logical
-        coding_score,                         # [1]  coding
-        hackathon_cnt,                        # [2]  hackathons
-        ps_raw,                               # [3]  public speaking
-        self_learn,                           # [4]  self-learning
-        1 if a[9] in [0, 1] else 0,           # [5]  extra courses
-        cert_count,                           # [6]  certifications
-        workshop_count,                       # [7]  workshops
-        rw_raw,                               # [8]  reading & writing
-        memory_score,                         # [9]  memory
-        subject_enc.get(a[4], 3),             # [10] interested subjects
-        career_enc.get(a[11], 1),             # [11] career area
-        job_flag,                             # [12] job/higher studies
-        company_enc.get(a[7], 2),             # [13] company type
-        1 if a[6] in [0, 1] else 0,           # [14] senior input
-        book_enc.get(a[12], 2),               # [15] book type
-        1 - mgmt_flag,                        # [16] technical (1) vs management (0)
-        1 if a[6] == 0 else 0,                # [17] smart worker
-        1 if a[2] in [0, 1, 2] else 0,        # [18] team work
-        introvert_flag,                       # [19] introvert
-        academic_pct,                         # [20] academic %
-        math_raw,                             # [21] math
-        soft_score,                           # [22] soft skills
+        logical_score,                        # [0]
+        coding_score,                         # [1]
+        hackathon_cnt,                        # [2]
+        ps_raw,                               # [3]
+        self_learn,                           # [4]
+        1 if a[9] in [0, 1] else 0,           # [5]
+        cert_count,                           # [6]
+        workshop_count,                       # [7]
+        rw_raw,                               # [8]
+        memory_score,                         # [9]
+        subject_enc.get(a[4], 3),             # [10]
+        career_enc.get(a[11], 1),             # [11]
+        job_flag,                             # [12]
+        company_enc.get(a[7], 2),             # [13]
+        1 if a[6] in [0, 1] else 0,           # [14]
+        book_enc.get(a[12], 2),               # [15]
+        1 - mgmt_flag,                        # [16]
+        1 if a[6] == 0 else 0,                # [17]
+        1 if a[2] in [0, 1, 2] else 0,        # [18]
+        introvert_flag,                       # [19]
+        academic_pct,                         # [20]
+        math_raw,                             # [21]
+        soft_score,                           # [22]
     ]
     return np.array([vector], dtype=float)
 
-def predict(model, feature_vector: np.ndarray) -> tuple:
+
+def predict(model, feature_vector: np.ndarray) -> tuple[str, float | None, list[tuple[str, float]]]:
     """
-    Run prediction and return (career_str, confidence_pct, top3_list).
-    Handles models without predict_proba gracefully.
+    Run inference and return (top_career, confidence_pct, top3_list).
+    Handles models without predict_proba gracefully — no crashes.
     """
-    raw    = model.predict(feature_vector)
-    top_c  = str(raw[0]).strip().lower()
-    top3   = []
-    conf   = None
+    raw   = model.predict(feature_vector)
+    top_c = str(raw[0]).strip().lower()
+    top3: list[tuple[str, float]] = []
+    conf: float | None = None
 
     if hasattr(model, "predict_proba"):
         probs   = model.predict_proba(feature_vector)[0]
@@ -1106,72 +847,74 @@ def predict(model, feature_vector: np.ndarray) -> tuple:
 
     return top_c, conf, top3
 
-def infer_personality(answers: list) -> list:
-    """Infer personality descriptors from quiz answer patterns."""
-    tags = []
-    # Introvert vs extrovert
-    if answers[7] == 0 or answers[5] in [2, 3]:
-        tags.append(("Introvert",   "chip-introvert", "🪐"))
-    else:
-        tags.append(("Extrovert",   "chip-extrovert", "⚡"))
-    # Analytical
-    if answers[0] == 0 and answers[3] in [0, 1]:
-        tags.append(("Analytical",  "chip-analytical","🔬"))
-    # Creative
-    if answers[0] == 1 or answers[1] == 1:
-        tags.append(("Creative",    "chip-creative",  "🎨"))
-    # Leader
-    if answers[2] == 2 and answers[5] == 0:
-        tags.append(("Leader",      "chip-leader",    "🏆"))
-    # Researcher
-    if answers[0] == 0 and answers[1] == 3 and answers[13] == 3:
-        tags.append(("Researcher",  "chip-analytical","📚"))
-    return tags if tags else [("Explorer", "chip-analytical", "🌐")]
 
-def generate_explanation(career: str, answers: list) -> str:
-    """Generate a personalised explanation of why this career suits the user."""
-    strengths = []
+def infer_personality(answers: list[int]) -> list[tuple[str, str, str]]:
+    """Return list of (label, css_class, emoji) personality descriptors."""
+    tags: list[tuple[str, str, str]] = []
+    if answers[7] == 0 or answers[5] in [2, 3]:
+        tags.append(("Introvert",  "pc-in", "🪐"))
+    else:
+        tags.append(("Extrovert",  "pc-ex", "⚡"))
+    if answers[0] == 0 and answers[3] in [0, 1]:
+        tags.append(("Analytical", "pc-an", "🔬"))
+    if answers[0] == 1 or answers[1] == 1:
+        tags.append(("Creative",   "pc-cr", "🎨"))
+    if answers[2] == 2 and answers[5] == 0:
+        tags.append(("Leader",     "pc-ld", "🏆"))
+    if answers[0] == 0 and answers[1] == 3 and answers[13] == 3:
+        tags.append(("Researcher", "pc-an", "📚"))
+    return tags if tags else [("Explorer", "pc-an", "🌐")]
+
+
+def generate_explanation(career: str, answers: list[int]) -> str:
+    """Return a one-sentence personalised explanation for the predicted career."""
+    strengths: list[str] = []
     if answers[5] == 0:          strengths.append("natural communication ability")
     if answers[0] == 0:          strengths.append("sharp logical reasoning")
     if answers[3] in [0, 1]:     strengths.append("strong mathematical grounding")
     if answers[9] == 0:          strengths.append("self-driven curiosity")
     if answers[10] in [0, 1]:    strengths.append("competitive hands-on experience")
     if answers[0] == 1:          strengths.append("creative problem-solving instinct")
-    if answers[6] == 0:          strengths.append("high-performance mindset")
+    if answers[6] == 0:          strengths.append("high-performance mindset under pressure")
     if not strengths:
         strengths = ["a versatile skill profile", "intellectual adaptability"]
     s = " and ".join(strengths[:2])
-    return f"Your {s} position you well for a career in {career.title()}. The role aligns naturally with how you think, work, and grow."
+    return f"Your {s} position you well for a career in {career.title()} — the role aligns naturally with how you think, work, and grow."
 
-def render_roadmap(career: str):
-    """Render the vertical timeline roadmap for a given career."""
+
+# ═════════════════════════════════════════════════════════════
+# RENDER ROADMAP
+# ═════════════════════════════════════════════════════════════
+def render_roadmap(career: str) -> None:
+    """Render the vertical-timeline roadmap for the predicted career."""
     key   = career.lower().strip()
     steps = ROADMAPS.get(key, ROADMAPS["default"])
     for i, step in enumerate(steps):
         is_last   = (i == len(steps) - 1)
         tags_html = "".join(
-            f'<span class="skill-tag {step["type"]}">{s}</span>'
+            f'<span class="sk-tag sk-{step["type"]}">{s}</span>'
             for s in step["skills"]
         )
-        line_html = "" if is_last else '<div class="roadmap-step-line"></div>'
+        line_html = "" if is_last else '<div class="rm-line"></div>'
         st.markdown(f"""
-<div class="roadmap-step" style="animation-delay:{i*0.08}s">
-  <div class="roadmap-step-left">
-    <div class="roadmap-step-circle">{str(i+1).zfill(2)}</div>
+<div class="rm-step">
+  <div class="rm-left">
+    <div class="rm-circle">{str(i + 1).zfill(2)}</div>
     {line_html}
   </div>
-  <div class="roadmap-step-body">
-    <div class="roadmap-step-tag">{step["tag"]}</div>
-    <div class="roadmap-step-title">{step["title"]}</div>
-    <div class="roadmap-step-desc">{step["desc"]}</div>
+  <div class="rm-body">
+    <div class="rm-tag">{step["tag"]}</div>
+    <div class="rm-title">{step["title"]}</div>
+    <div class="rm-desc">{step["desc"]}</div>
     <div>{tags_html}</div>
   </div>
 </div>""", unsafe_allow_html=True)
 
-# ══════════════════════════════════════════════════════════════════════
+
+# ═════════════════════════════════════════════════════════════
 # SIDEBAR NAVIGATION
-# ══════════════════════════════════════════════════════════════════════
-NAV_ITEMS = [
+# ═════════════════════════════════════════════════════════════
+_NAV = [
     ("home",    "🏠", "Home"),
     ("quiz",    "📝", "Neural Assessment"),
     ("results", "🎯", "AI Projections"),
@@ -1179,9 +922,9 @@ NAV_ITEMS = [
     ("chat",    "💬", "AI Mentor"),
 ]
 
-def render_sidebar():
+
+def render_sidebar() -> None:
     with st.sidebar:
-        # Brand
         st.markdown("""
 <div class="nav-brand">
   <div class="nav-logo">
@@ -1189,41 +932,41 @@ def render_sidebar():
     NextStep AI
   </div>
   <div class="nav-tagline">Your Smart Career Guide to the Next Step</div>
-</div>
-""", unsafe_allow_html=True)
+</div>""", unsafe_allow_html=True)
 
-        st.markdown('<div class="nav-section-label">Navigation</div>', unsafe_allow_html=True)
+        st.markdown('<div class="nav-slabel">Navigation</div>', unsafe_allow_html=True)
 
-        current = st.session_state.get("page", "home")
-        for key, icon, label in NAV_ITEMS:
+        for key, icon, label in _NAV:
             if st.button(f"{icon}  {label}", key=f"nav_{key}", use_container_width=True):
                 st.session_state.page = key
                 st.rerun()
 
-        st.markdown('<div class="nav-divider"></div>', unsafe_allow_html=True)
-        st.markdown('<div class="nav-section-label">Your Profile</div>', unsafe_allow_html=True)
+        st.markdown('<div class="nav-div"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="nav-slabel">Your Profile</div>', unsafe_allow_html=True)
 
         career = st.session_state.get("career", "")
         conf   = st.session_state.get("confidence", None)
         if career:
-            conf_str = f"  ·  {conf}% confidence" if conf else ""
+            conf_str = f"  ·  {conf}% match" if conf else ""
             st.markdown(f"""
 <div class="nav-status">
-  <div class="nav-status-career">{career_icon(career)}  {career.title()}</div>
-  <div class="nav-status-label">Predicted Career{conf_str}</div>
+  <div class="nav-s-career">{career_icon(career)}  {career.title()}</div>
+  <div class="nav-s-label">Predicted Career{conf_str}</div>
 </div>""", unsafe_allow_html=True)
         else:
             st.markdown("""
 <div class="nav-status">
-  <div style="font-size:12px;color:var(--dim)">Complete the quiz to see your prediction.</div>
+  <div style="font-size:12px;color:var(--dim)">Complete the quiz to unlock your prediction.</div>
 </div>""", unsafe_allow_html=True)
 
-        st.markdown('<div class="nav-footer">NextStep AI · v3.0 · Zero APIs</div>', unsafe_allow_html=True)
+        st.markdown('<div class="nav-footer">NextStep AI · v4.0 · Zero APIs</div>',
+                    unsafe_allow_html=True)
 
-# ══════════════════════════════════════════════════════════════════════
+
+# ═════════════════════════════════════════════════════════════
 # PAGE: HOME
-# ══════════════════════════════════════════════════════════════════════
-def page_home():
+# ═════════════════════════════════════════════════════════════
+def page_home() -> None:
     st.markdown("""
 <div class="hero">
   <div class="hero-eyebrow">
@@ -1232,49 +975,48 @@ def page_home():
   </div>
   <div class="hero-title">
     Discover Your<br><em>Perfect Career</em><br>
-    <span class="gradient-text">with NextStep AI</span>
+    <span class="hero-grad-text">with NextStep AI</span>
   </div>
   <div class="hero-sub">
     Unlock your professional destiny using advanced machine learning
     and deep personality mapping. Your smart career guide to the next step.
   </div>
-  <div class="hero-features">
-    <div class="hero-feat"><span class="feat-icon">📝</span> 15-Question Assessment</div>
-    <div class="hero-feat"><span class="feat-icon">🤖</span> ML Career Prediction</div>
-    <div class="hero-feat"><span class="feat-icon">🗺️</span> Step-by-Step Roadmap</div>
-    <div class="hero-feat"><span class="feat-icon">💬</span> AI Career Mentor</div>
-    <div class="hero-feat"><span class="feat-icon">📄</span> Resume Score</div>
+  <div class="hero-pills">
+    <div class="hero-pill"><span>📝</span> 15-Question Assessment</div>
+    <div class="hero-pill"><span>🤖</span> ML Career Prediction</div>
+    <div class="hero-pill"><span>🗺️</span> Step-by-Step Roadmap</div>
+    <div class="hero-pill"><span>💬</span> AI Career Mentor</div>
+    <div class="hero-pill"><span>📄</span> Resume Score</div>
   </div>
 </div>
 """, unsafe_allow_html=True)
 
-    st.markdown('<div class="hdivider"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="hdiv"></div>', unsafe_allow_html=True)
 
-    # Feature cards
-    st.markdown('<div class="section-eyebrow">Cognitive Toolkit</div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">The Neural Advantage</div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-sub">Everything you need to find and pursue the right career path — all in one intelligent platform.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="s-eye">Cognitive Toolkit</div>', unsafe_allow_html=True)
+    st.markdown('<div class="s-title">The Neural Advantage</div>', unsafe_allow_html=True)
+    st.markdown('<div class="s-sub">Everything you need to find and pursue the right career path — all in one intelligent platform.</div>', unsafe_allow_html=True)
 
-    c1, c2 = st.columns(2)
-    features = [
-        ("🤖","AI Prediction","Real-time ML analysis maps your profile to the best-fit career with confidence scoring.","card-purple"),
-        ("🧠","Personality Mapping","Deep behavioural analysis reveals your Introvert / Extrovert / Analytical / Creative profile.","card-blue"),
-        ("🗺️","Roadmap Generator","Phase-by-phase learning paths with tools, skills, and projects for your exact career.","card-cyan"),
-        ("💬","Mentor Chatbot","24/7 AI-powered career coaching with no API keys — fully local and private.","card-green"),
-        ("📄","Resume Analyzer","Keyword scoring and improvement suggestions tailored to your predicted career.","card-purple"),
-        ("📊","Top 3 Projections","See the top three careers with probability bars and confidence percentages.","card-blue"),
+    _FEATURES = [
+        ("🤖", "AI Prediction",     "Real-time ML analysis maps your profile to the best-fit career with confidence scoring.",          "card-pu"),
+        ("🧠", "Personality Map",   "Behavioural analysis reveals your Introvert / Extrovert / Analytical / Creative profile.",          "card-bl"),
+        ("🗺️", "Roadmap Generator", "Phase-by-phase learning paths with tools, skills, and projects for your exact career.",            "card-cy"),
+        ("💬", "Mentor Chatbot",    "24/7 AI-powered career coaching with no API keys — fully local and private.",                      "card-gr"),
+        ("📄", "Resume Analyzer",   "Keyword scoring and improvement suggestions tailored to your predicted career path.",              "card-pu"),
+        ("📊", "Top 3 Matches",     "See the top three careers ranked by probability with animated confidence bars.",                   "card-bl"),
     ]
-    for i, (em, title, desc, cls) in enumerate(features):
+    c1, c2 = st.columns(2)
+    for i, (em, title, desc, cls) in enumerate(_FEATURES):
         col = c1 if i % 2 == 0 else c2
         with col:
             st.markdown(f"""
-<div class="card {cls}">
-  <div class="feat-item-icon">{em}</div>
-  <div class="feat-item-title">{title}</div>
-  <div class="feat-item-desc">{desc}</div>
+<div class="card {cls}" style="margin-bottom:1rem">
+  <div style="font-size:2rem;margin-bottom:.8rem">{em}</div>
+  <div style="font-size:15px;font-weight:700;color:var(--snow);margin-bottom:6px">{title}</div>
+  <div style="font-size:13px;color:var(--muted);line-height:1.65">{desc}</div>
 </div>""", unsafe_allow_html=True)
 
-    st.markdown('<div class="hdivider"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="hdiv"></div>', unsafe_allow_html=True)
     b1, _, _ = st.columns([1, 2, 2])
     with b1:
         if st.button("🚀  Start Neural Assessment", use_container_width=True):
@@ -1283,33 +1025,34 @@ def page_home():
             st.session_state.answers = []
             st.rerun()
 
-# ══════════════════════════════════════════════════════════════════════
+
+# ═════════════════════════════════════════════════════════════
 # PAGE: QUIZ
-# ══════════════════════════════════════════════════════════════════════
-def page_quiz(model):
+# ═════════════════════════════════════════════════════════════
+def page_quiz(model) -> None:
     if "q_index" not in st.session_state: st.session_state.q_index = 0
-    if "answers" not in st.session_state: st.session_state.answers  = []
+    if "answers" not in st.session_state: st.session_state.answers = []
 
     total = len(QUESTIONS)
     qi    = st.session_state.q_index
+    pct   = int((qi / total) * 100)
 
-    # Header with progress
-    pct = int((qi / total) * 100)
+    # Progress header
     st.markdown(f"""
-<div class="quiz-header">
-  <div class="quiz-header-left">
+<div class="quiz-hdr">
+  <div>
     <div class="quiz-prog-label">Neural Assessment Pulse · {pct}% Complete</div>
-    <div class="quiz-prog-bar-bg">
-      <div class="quiz-prog-bar-fill" style="width:{pct}%"></div>
+    <div class="quiz-prog-bg">
+      <div class="quiz-prog-fill" style="width:{pct}%"></div>
     </div>
   </div>
-  <div class="quiz-step-badge">Question {qi+1} of {total}</div>
+  <div class="quiz-step-badge">Question {qi + 1} of {total}</div>
 </div>""", unsafe_allow_html=True)
 
-    # ── All answered → predict ──
+    # ── All questions answered → predict ──
     if qi >= total:
         st.markdown("""
-<div class="card card-purple" style="text-align:center;padding:3rem">
+<div class="card card-pu" style="text-align:center;padding:3rem">
   <div style="font-size:3.5rem;margin-bottom:1rem">🧠</div>
   <div style="font-family:var(--serif);font-size:1.8rem;color:var(--snow);margin-bottom:.5rem">Assessment Complete</div>
   <div style="font-size:14px;color:var(--muted)">Analysing your cognitive profile with NextStep AI…</div>
@@ -1321,9 +1064,13 @@ def page_quiz(model):
             if model:
                 career, conf, top3 = predict(model, feat)
             else:
-                # Demo fallback — model.pkl missing
+                # Demo mode when career_model.pkl is absent
                 career, conf = "software developer", 73.6
-                top3 = [("software developer", 73.6), ("data scientist", 15.8), ("web developer", 7.2)]
+                top3 = [
+                    ("software developer", 73.6),
+                    ("data scientist",     15.8),
+                    ("web developer",       7.2),
+                ]
 
         st.session_state.career      = career
         st.session_state.confidence  = conf
@@ -1331,7 +1078,7 @@ def page_quiz(model):
         st.session_state.personality = infer_personality(st.session_state.answers)
         st.session_state.explanation = generate_explanation(career, st.session_state.answers)
 
-        st.success("✅  Your AI projection is ready! Go to **AI Projections** in the sidebar.")
+        st.success("✅  Prediction ready — navigate to **AI Projections** in the sidebar.")
         if st.button("View My Results →"):
             st.session_state.page = "results"
             st.rerun()
@@ -1341,7 +1088,7 @@ def page_quiz(model):
     q = QUESTIONS[qi]
     st.markdown(f"""
 <div class="card">
-  <div class="quiz-q-num">Assessment Pulse · Question {qi+1}</div>
+  <div class="quiz-q-num">Assessment Pulse · Question {qi + 1}</div>
   <div class="quiz-q-text">{q["text"]}</div>
 </div>""", unsafe_allow_html=True)
 
@@ -1349,10 +1096,11 @@ def page_quiz(model):
     for oi, opt in enumerate(q["options"]):
         lc, bc = st.columns([0.055, 0.945])
         with lc:
-            st.markdown(f"""
-<div style="margin-top:9px;font-family:var(--mono);font-size:11px;
-            color:var(--purple2);padding:6px 0;font-weight:600">{labels[oi]}</div>""",
-                        unsafe_allow_html=True)
+            st.markdown(
+                f'<div style="margin-top:9px;font-family:var(--mono);font-size:11px;'
+                f'color:var(--purple2);padding:6px 0;font-weight:600">{labels[oi]}</div>',
+                unsafe_allow_html=True,
+            )
         with bc:
             if st.button(opt, key=f"q{qi}_opt{oi}", use_container_width=True):
                 st.session_state.answers.append(oi)
@@ -1367,10 +1115,11 @@ def page_quiz(model):
                 st.session_state.answers.pop()
             st.rerun()
 
-# ══════════════════════════════════════════════════════════════════════
+
+# ═════════════════════════════════════════════════════════════
 # PAGE: RESULTS
-# ══════════════════════════════════════════════════════════════════════
-def page_results():
+# ═════════════════════════════════════════════════════════════
+def page_results() -> None:
     if not st.session_state.get("career"):
         st.markdown("""
 <div class="card" style="text-align:center;padding:3.5rem">
@@ -1384,20 +1133,19 @@ def page_results():
         return
 
     career  = st.session_state.career
-    conf    = st.session_state.confidence
+    conf    = st.session_state.get("confidence") or 0.0
     top3    = st.session_state.get("top3", [])
     persona = st.session_state.get("personality", [])
     expl    = st.session_state.get("explanation", "")
     icon    = career_icon(career)
-    conf_pct = conf if conf else 0
 
-    # ── Primary result ──
+    # ── Primary result card ──
     st.markdown(f"""
-<div class="card card-purple" style="text-align:center;padding:3.5rem 2rem">
+<div class="card card-pu" style="text-align:center;padding:3.5rem 2rem">
   <div class="result-badge">✦ AI Projection · Top Match</div>
   <div class="result-icon">{icon}</div>
   <div class="result-career">{career.title()}</div>
-  <div class="result-conf">● Neural Sync: {conf_pct}% confidence</div>
+  <div class="result-conf">● Neural Sync: {conf:.1f}% confidence</div>
   <div class="result-expl">{expl}</div>
 </div>""", unsafe_allow_html=True)
 
@@ -1405,24 +1153,22 @@ def page_results():
     col_a, col_b = st.columns(2)
 
     with col_a:
-        st.markdown('<div class="card card-blue">', unsafe_allow_html=True)
-        st.markdown('<div class="section-eyebrow">Neural Sync Score</div>', unsafe_allow_html=True)
-
-        # SVG confidence ring
-        r   = 52
-        circ = 2 * 3.14159 * r
-        dash = (conf_pct / 100) * circ if conf_pct else 0
-        ring_color = "#10B981" if conf_pct >= 70 else ("#F59E0B" if conf_pct >= 45 else "#F43F5E")
+        st.markdown('<div class="card card-bl">', unsafe_allow_html=True)
+        st.markdown('<div class="s-eye">Neural Sync Score</div>', unsafe_allow_html=True)
+        r     = 52
+        circ  = 2 * 3.14159 * r
+        dash  = (conf / 100) * circ
+        ring_color = ("#10B981" if conf >= 70 else ("#F59E0B" if conf >= 45 else "#F43F5E"))
         st.markdown(f"""
-<div class="conf-ring-wrap">
-  <div class="conf-ring-outer" style="width:130px;height:130px;position:relative">
-    <svg class="conf-ring-svg" viewBox="0 0 120 120" style="position:absolute;inset:0;transform:rotate(-90deg)">
+<div class="conf-wrap">
+  <div class="conf-outer">
+    <svg class="conf-svg" viewBox="0 0 120 120" style="position:absolute;inset:0;transform:rotate(-90deg)">
       <circle cx="60" cy="60" r="{r}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="8"/>
       <circle cx="60" cy="60" r="{r}" fill="none" stroke="{ring_color}" stroke-width="8"
               stroke-dasharray="{dash:.1f} {circ:.1f}" stroke-linecap="round"/>
     </svg>
-    <div class="conf-ring-inner">
-      <span class="conf-num">{int(conf_pct) if conf_pct else "–"}</span>
+    <div class="conf-inner">
+      <span class="conf-num">{int(conf)}</span>
       <span class="conf-unit">% sync</span>
     </div>
   </div>
@@ -1430,72 +1176,79 @@ def page_results():
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col_b:
-        st.markdown('<div class="card card-purple">', unsafe_allow_html=True)
-        st.markdown('<div class="section-eyebrow">Personality Profile</div>', unsafe_allow_html=True)
+        st.markdown('<div class="card card-pu">', unsafe_allow_html=True)
+        st.markdown('<div class="s-eye">Personality Profile</div>', unsafe_allow_html=True)
         chips = "".join(
-            f'<span class="personality-chip {cls}">{em} {lbl}</span>'
+            f'<span class="p-chip {cls}">{em} {lbl}</span>'
             for lbl, cls, em in persona
         )
-        st.markdown(f'<div style="margin-top:.8rem;line-height:2.2">{chips}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="margin-top:.8rem;line-height:2.4">{chips}</div>',
+                    unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # ── Top 3 ──
+    # ── Top 3 predictions ──
     if top3:
-        st.markdown('<div class="section-eyebrow" style="margin-top:0.5rem">AI Projections</div>', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">Your Top 3 Matches</div>', unsafe_allow_html=True)
-        st.markdown('<div class="section-sub">Ranked by your neural profile match score based on current trajectory.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="hdiv"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="s-eye">AI Projections</div>', unsafe_allow_html=True)
+        st.markdown('<div class="s-title">Your Top 3 Matches</div>', unsafe_allow_html=True)
+        st.markdown('<div class="s-sub">Ranked by neural profile match score based on your assessment answers.</div>', unsafe_allow_html=True)
 
-        max_p = top3[0][1] if top3 else 1
         labels = ["TOP MATCH", "ALTERNATIVE", "ALTERNATIVE"]
+        max_p  = top3[0][1] if top3 else 1.0
         for rank, (name, pct) in enumerate(top3):
-            bw   = int((pct / max(max_p, 1)) * 100)
-            lbl  = labels[min(rank, 2)]
-            icn  = career_icon(name)
+            bw  = int((pct / max(max_p, 1)) * 100)
+            lbl = labels[min(rank, 2)]
             st.markdown(f"""
-<div class="top3-row" style="animation-delay:{rank*0.12}s">
-  <span class="top3-rank">#{rank+1}</span>
-  <span class="top3-icon">{icn}</span>
+<div class="t3-row">
+  <span class="t3-rank">#{rank + 1}</span>
+  <span class="t3-icon">{career_icon(name)}</span>
   <div style="flex:1;margin-left:12px">
     <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--dim);margin-bottom:3px">{lbl}</div>
-    <span class="top3-name">{name.title()}</span>
+    <span class="t3-name">{name.title()}</span>
   </div>
-  <div class="top3-bar-bg"><div class="top3-bar-fill" style="width:{bw}%"></div></div>
-  <span class="top3-pct">{pct}</span>
+  <div class="t3-bar-bg"><div class="t3-bar-fill" style="width:{bw}%"></div></div>
+  <span class="t3-pct">{pct}%</span>
 </div>""", unsafe_allow_html=True)
 
-    st.markdown('<div class="hdivider"></div>', unsafe_allow_html=True)
-
     # ── Roadmap ──
-    st.markdown('<div class="section-eyebrow">The Path Forward</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="section-title">Your {career.title()} Roadmap</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="section-sub">A structured, phase-by-phase guide built for your neural profile and career trajectory.</div>', unsafe_allow_html=True)
-
+    st.markdown('<div class="hdiv"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="s-eye">The Path Forward</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="s-title">Your {career.title()} Roadmap</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="s-sub">A structured, phase-by-phase guide built for your neural profile and career trajectory.</div>', unsafe_allow_html=True)
     st.markdown('<div class="card">', unsafe_allow_html=True)
     render_roadmap(career)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="hdivider"></div>', unsafe_allow_html=True)
+    # ── Action buttons ──
+    st.markdown('<div class="hdiv"></div>', unsafe_allow_html=True)
     r1, r2, r3 = st.columns(3)
     with r1:
-        if st.button("💬  AI Mentor", use_container_width=True):
-            st.session_state.page = "chat"; st.rerun()
+        if st.button("💬  AI Mentor",        use_container_width=True):
+            st.session_state.page = "chat";   st.rerun()
     with r2:
-        if st.button("📄  Resume Analyzer", use_container_width=True):
+        if st.button("📄  Resume Analyzer",  use_container_width=True):
             st.session_state.page = "resume"; st.rerun()
     with r3:
         if st.button("🔄  Retake Assessment", use_container_width=True):
-            for k in ["career","confidence","top3","personality","explanation","answers","q_index"]:
+            for k in ["career", "confidence", "top3", "personality", "explanation", "answers", "q_index"]:
                 st.session_state.pop(k, None)
-            st.session_state.page = "quiz"; st.rerun()
+            st.session_state.page = "quiz"
+            st.rerun()
 
-# ══════════════════════════════════════════════════════════════════════
+
+# ═════════════════════════════════════════════════════════════
 # PAGE: RESUME ANALYZER
-# ══════════════════════════════════════════════════════════════════════
-def page_resume():
-    st.markdown('<div class="section-eyebrow">Resume Analyzer</div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">Score Your Resume</div>', unsafe_allow_html=True)
+# ═════════════════════════════════════════════════════════════
+def page_resume() -> None:
+    st.markdown('<div class="s-eye">Resume Analyzer</div>', unsafe_allow_html=True)
+    st.markdown('<div class="s-title">Score Your Resume</div>', unsafe_allow_html=True)
     career = st.session_state.get("career", "default")
-    st.markdown(f'<div class="section-sub">Keyword analysis optimised for <strong style="color:var(--purple2)">{career.title()}</strong>. Paste plain text below — not PDF.</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="s-sub">Keyword analysis optimised for '
+        f'<strong style="color:var(--purple2)">{career.title()}</strong>. '
+        f'Paste your plain-text resume below — not a PDF.</div>',
+        unsafe_allow_html=True,
+    )
 
     resume_text = st.text_area(
         "Resume",
@@ -1503,7 +1256,6 @@ def page_resume():
         placeholder="Paste your full resume text here…",
         label_visibility="collapsed",
     )
-
     ca, cb, _ = st.columns([1, 1, 2])
     with ca: do_analyze = st.button("🔍  Analyse Resume", use_container_width=True)
     with cb: do_clear   = st.button("🗑️  Clear",          use_container_width=True)
@@ -1521,32 +1273,27 @@ def page_resume():
 
         score = result["score"]
         grade = result["grade"]
-        grade_colors = {"A":"var(--green)","B":"var(--blue2)","C":"var(--amber)","D":"var(--rose)"}
-        gc = grade_colors.get(grade, "var(--purple2)")
-        grade_bg = {
-            "A":"rgba(16,185,129,0.12)","B":"rgba(59,130,246,0.12)",
-            "C":"rgba(245,158,11,0.12)","D":"rgba(244,63,94,0.12)"
-        }.get(grade, "rgba(139,92,246,0.12)")
-        grade_border = {
-            "A":"rgba(16,185,129,0.3)","B":"rgba(59,130,246,0.3)",
-            "C":"rgba(245,158,11,0.3)","D":"rgba(244,63,94,0.3)"
-        }.get(grade, "rgba(139,92,246,0.3)")
+        grade_color = {"A": "var(--green)", "B": "var(--blue2)", "C": "var(--amber)", "D": "var(--rose)"}.get(grade, "var(--purple2)")
+        grade_bg    = {"A": "rgba(16,185,129,0.11)", "B": "rgba(59,130,246,0.11)", "C": "rgba(245,158,11,0.11)", "D": "rgba(244,63,94,0.11)"}.get(grade, "rgba(139,92,246,0.11)")
+        grade_bd    = {"A": "rgba(16,185,129,0.28)", "B": "rgba(59,130,246,0.28)", "C": "rgba(245,158,11,0.28)", "D": "rgba(244,63,94,0.28)"}.get(grade, "rgba(139,92,246,0.28)")
 
         cs, ck = st.columns([1, 2])
         with cs:
             st.markdown(f"""
-<div class="card resume-score-card">
+<div class="card" style="text-align:center;padding:2rem">
   <div style="font-family:var(--mono);font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:1rem">Neural Resume Score</div>
-  <div class="resume-grade" style="color:{gc}">{score}</div>
-  <div class="resume-score-sub">/ 100</div>
-  <div class="grade-badge" style="background:{grade_bg};border:1px solid {grade_border};color:{gc}">Grade {grade}</div>
+  <div style="font-family:var(--serif);font-size:5rem;color:{grade_color};line-height:1">{score}</div>
+  <div style="font-family:var(--mono);font-size:1rem;color:var(--muted);margin-top:.3rem">/ 100</div>
+  <div style="margin-top:1rem;display:inline-block;padding:6px 18px;border-radius:100px;
+              background:{grade_bg};border:1px solid {grade_bd};
+              font-family:var(--mono);font-size:13px;color:{grade_color}">Grade {grade}</div>
 </div>""", unsafe_allow_html=True)
 
         with ck:
             matched = result["matched_kws"]
             missing = result["missing_kws"]
-            mh = "".join(f'<span class="kw-chip kw-found">{k}</span>' for k in matched)
-            nh = "".join(f'<span class="kw-chip kw-missing">{k}</span>' for k in missing[:7])
+            mh = "".join(f'<span class="kw-found">{k}</span>'   for k in matched)
+            nh = "".join(f'<span class="kw-missing">{k}</span>' for k in missing[:7])
             st.markdown(f"""
 <div class="card">
   <div style="margin-bottom:1.2rem">
@@ -1559,72 +1306,71 @@ def page_resume():
   </div>
 </div>""", unsafe_allow_html=True)
 
-        icon_map = {
-            "warning":"⚠️","chart":"📊","link":"🔗",
-            "rocket":"🚀","doc":"📄","grad":"🎓",
-            "check":"✅","phone":"📞",
-        }
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown('<div class="section-eyebrow" style="margin-bottom:1rem">Improvement Suggestions</div>', unsafe_allow_html=True)
-        for key, tip in result["suggestions"]:
-            ic = icon_map.get(key, "💡")
-            st.markdown(f'<div class="suggestion-row"><span class="sug-icon">{ic}</span><span>{tip}</span></div>', unsafe_allow_html=True)
+        st.markdown('<div class="s-eye" style="margin-bottom:1rem">Improvement Suggestions</div>',
+                    unsafe_allow_html=True)
+        for icon, tip in result["suggestions"]:
+            st.markdown(
+                f'<div class="sug-row"><span style="flex-shrink:0;font-size:15px">{icon}</span>'
+                f'<span>{tip}</span></div>',
+                unsafe_allow_html=True,
+            )
         st.markdown('</div>', unsafe_allow_html=True)
 
-# ══════════════════════════════════════════════════════════════════════
+
+# ═════════════════════════════════════════════════════════════
 # PAGE: CHATBOT
-# ══════════════════════════════════════════════════════════════════════
-def page_chat():
+# ═════════════════════════════════════════════════════════════
+def page_chat() -> None:
     career = st.session_state.get("career", "")
 
-    st.markdown('<div class="section-eyebrow">AI Mentor</div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">NextStep AI Career Mentor</div>', unsafe_allow_html=True)
+    st.markdown('<div class="s-eye">AI Mentor</div>', unsafe_allow_html=True)
+    st.markdown('<div class="s-title">NextStep AI Career Mentor</div>', unsafe_allow_html=True)
     st.markdown(
-        f'<div class="section-sub">Your personal AI mentor, calibrated to <strong style="color:var(--purple2)">'
+        f'<div class="s-sub">Your mentor is calibrated to '
+        f'<strong style="color:var(--purple2)">'
         f'{career.title() if career else "general career guidance"}'
-        f'</strong>. Ask anything — skills, roadmap, interviews, salary.</div>',
+        f'</strong>. Ask about skills, projects, interviews, or salary.</div>',
         unsafe_allow_html=True,
     )
 
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
         greeting = (
-            f"Hello! I am your NextStep AI Career Mentor, and I can see your predicted career is "
-            f"**{career.title()}**. I am here to help you navigate your journey. "
-            f"Ask me anything — skills to learn, how to get started, project ideas, interview tips, "
-            f"or salary expectations. What would you like to explore first?"
+            f"Hello! I am your NextStep AI Career Mentor. Your predicted career is "
+            f"**{career.title()}**. Ask me anything — skills, how to start, project ideas, "
+            f"interview tips, or salary expectations. What would you like to explore?"
             if career else
-            "Hello! I am your NextStep AI Career Mentor. "
-            "Complete the Neural Assessment to get personalised career advice, "
-            "or feel free to ask me a general career guidance question right now!"
+            "Hello! I am your NextStep AI Career Mentor. Complete the Neural Assessment for "
+            "personalised guidance, or ask me a general career question right now!"
         )
         st.session_state.chat_history.append(("bot", greeting))
 
     # Suggested prompts
-    st.markdown('<div class="chat-suggestions">', unsafe_allow_html=True)
-    suggestions = [
+    PROMPTS = [
         "What skills do I need?",
         "How do I get started?",
         "Suggest 3 projects",
         "Interview tips",
         "What salary can I expect?",
     ]
-    scols = st.columns(len(suggestions))
-    for i, (col, sug) in enumerate(zip(scols, suggestions)):
+    pcols = st.columns(len(PROMPTS))
+    for i, (col, prompt) in enumerate(zip(pcols, PROMPTS)):
         with col:
-            if st.button(sug, key=f"sug_{i}", use_container_width=True):
-                st.session_state.chat_history.append(("user", sug))
-                st.session_state.chat_history.append(("bot", chatbot_response(sug, career or "default")))
+            if st.button(prompt, key=f"sug_{i}", use_container_width=True):
+                st.session_state.chat_history.append(("user", prompt))
+                st.session_state.chat_history.append(
+                    ("bot", chatbot_response(prompt, career or "default"))
+                )
                 st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
-    # Conversation history
+    # Conversation
     for role, msg in st.session_state.chat_history:
         meta = "You" if role == "user" else "◈ NextStep AI Mentor"
         st.markdown(f"""
-<div class="chat-bubble {role}">
+<div class="chat-b {role if role == 'user' else 'bot'}">
   <div class="chat-meta">{meta}</div>
-  <div class="chat-text">{msg}</div>
+  <div class="chat-txt">{msg}</div>
 </div>""", unsafe_allow_html=True)
 
     # Input form
@@ -1637,34 +1383,36 @@ def page_chat():
                 label_visibility="collapsed",
             )
         with sc:
-            send = st.form_submit_button("Send", use_container_width=True)
+            send = st.form_submit_button("Send →", use_container_width=True)
 
     if send and user_input.strip():
         st.session_state.chat_history.append(("user", user_input.strip()))
-        reply = chatbot_response(user_input.strip(), career or "default")
-        st.session_state.chat_history.append(("bot", reply))
+        st.session_state.chat_history.append(
+            ("bot", chatbot_response(user_input.strip(), career or "default"))
+        )
         st.rerun()
 
+    st.markdown("<br>", unsafe_allow_html=True)
     if st.button("🗑️  Clear Conversation", key="clear_chat"):
         st.session_state.chat_history = []
         st.rerun()
 
-# ══════════════════════════════════════════════════════════════════════
+
+# ═════════════════════════════════════════════════════════════
 # MAIN
-# ══════════════════════════════════════════════════════════════════════
-def main():
+# ═════════════════════════════════════════════════════════════
+def main() -> None:
     inject_css()
 
-    # Initialise session state
-    defaults = [("page","home"),("career",""),("answers",[]),("q_index",0)]
-    for key, val in defaults:
+    # Initialise session state defaults
+    for key, val in [("page", "home"), ("career", ""), ("answers", []), ("q_index", 0)]:
         if key not in st.session_state:
             st.session_state[key] = val
 
-    # Load model (career_model.pkl)
+    # Load career_model.pkl once (cached)
     model, err = load_model()
-    if err and st.session_state.page not in ["home"]:
-        st.warning(f"⚠️ {err}  Running in demo mode — predictions are illustrative.")
+    if err and st.session_state.page != "home":
+        st.warning(f"⚠️ {err}  —  Running in demo mode; predictions are illustrative.")
 
     render_sidebar()
 
@@ -1678,7 +1426,7 @@ def main():
     st.markdown("""
 <div class="footer">
   NextStep AI · Your Smart Career Guide to the Next Step<br>
-  <span style="opacity:0.45">Built with ❤️ using Machine Learning &amp; Streamlit · Zero External APIs</span>
+  <span style="opacity:.45">Built with ❤️ using Machine Learning &amp; Streamlit · Zero External APIs</span>
 </div>""", unsafe_allow_html=True)
 
 
