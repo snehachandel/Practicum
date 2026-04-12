@@ -8,6 +8,7 @@
 
 import os, re, time, pickle
 import numpy as np
+import pandas as pd
 import streamlit as st
 
 # ─────────────────────────────────────────────────────────────
@@ -733,105 +734,201 @@ def load_model() -> tuple:
         return None, f"Failed to load model: {exc}"
 
 
+@st.cache_resource(show_spinner=False)
+def load_label_encoder() -> tuple:
+    """
+    Safely load label_encoder.pkl from the same directory as app.py.
+    Returns (label_encoder, error_string_or_None).
+    """
+    path = os.path.join(BASE_DIR, "label_encoder.pkl")
+    if not os.path.exists(path):
+        return None, "label_encoder.pkl not found — class labels may appear as numbers"
+    try:
+        with open(path, "rb") as f:
+            return pickle.load(f), None
+    except Exception as exc:
+        return None, f"Failed to load label encoder: {exc}"
+
+
 # ═════════════════════════════════════════════════════════════
 # QUIZ → 23-FEATURE VECTOR
 # ═════════════════════════════════════════════════════════════
-def quiz_to_features(answers: list[int]) -> np.ndarray:
+def quiz_to_features(answers: list[int], model) -> pd.DataFrame:
     """
-    Convert 15 quiz answer indices (0–3) into a 23-feature float vector
-    matching the original training schema of career_model.pkl.
-
-    Feature index → description:
-      [0]  logical quotient rating    (0–10)
-      [1]  coding skills rating       (0–10)
-      [2]  hackathons attended        (0–10)
-      [3]  public speaking points     (0–10)
-      [4]  self-learning capability   (0/1)
-      [5]  extra courses completed    (0/1)
-      [6]  certifications count       (0–5)
-      [7]  workshops attended         (0–5)
-      [8]  reading & writing skills   (0–10)
-      [9]  memory capability score    (0–10)
-      [10] interested subjects        (encoded 1–7)
-      [11] interested career area     (encoded 1–8)
-      [12] job vs. higher studies     (0/1)
-      [13] preferred company type     (encoded 1–5)
-      [14] taken advice from seniors  (0/1)
-      [15] preferred book type        (encoded 1–5)
-      [16] technical (1) / mgmt (0)   (0/1)
-      [17] smart (1) / hard (0) worker(0/1)
-      [18] worked in teams            (0/1)
-      [19] introvert                  (0/1)
-      [20] academic percentage        (0–100)
-      [21] math score                 (0–10)
-      [22] soft skills score          (0–10)
+    Convert quiz answers into one model-ready row with the same feature names
+    used during model training (including one-hot internet_access columns).
     """
-    a = answers  # shorthand
+    a = answers
 
-    # ── Raw signals ────────────────────────────────────────────
-    logical_boost  = 3 if a[0] == 0 else (1 if a[0] == 3 else 0)
-    tech_boost     = 3 if a[1] == 0 else 0
-    social_boost   = 3 if a[0] == 2 else 0
-    math_raw       = [9, 6, 3, 2][a[3]]
-    ps_raw         = [9, 6, 3, 1][a[5]]
-    pressure_bonus = [2, 1, 0, 0][a[6]]
-    introvert_flag = 1 if a[7] == 0 else 0
-    academic_pct   = [88, 72, 57, 45][a[8]]
-    self_learn     = 1 if a[9]  in [0, 1] else 0
-    hackathon_cnt  = [4, 2, 1, 0][a[10]]
-    mgmt_flag      = 1 if a[13] == 2 else 0
-    rw_raw         = [7, 6, 5, 9][a[12]]
-    job_flag       = 1 if a[14] in [0, 1] else 0
+    def clip(v: float, lo: float, hi: float) -> float:
+        return max(lo, min(hi, v))
 
-    # ── Composite scores ───────────────────────────────────────
-    logical_score  = min(10, 5 + logical_boost + tech_boost + pressure_bonus)
-    coding_score   = min(10, 4 + tech_boost + (2 if a[1] == 0 else 0) + (2 if a[4] == 0 else 0))
-    soft_score     = min(10, 4 + social_boost + (2 if a[12] == 2 else 0))
-    memory_score   = min(10, 5 + logical_boost + (2 if a[9] == 0 else 0))
-    cert_count     = min(5, 1 + (2 if a[9]  in [0, 1] else 0) + (1 if a[10] in [0, 1] else 0))
-    workshop_count = min(5, 1 + (1 if a[10] in [0, 1] else 0) + (1 if a[11] in [0, 1] else 0))
+    # Core latent signals (0..1) derived from behavioural answers
+    tech_lat = (
+        (1.0 if a[1] == 0 else 0.0) +
+        (1.0 if a[4] == 0 else 0.0) +
+        (1.0 if a[11] == 0 else 0.0) +
+        (1.0 if a[13] == 0 else 0.0) +
+        (1.0 if a[14] == 0 else 0.0)
+    ) / 5.0
+    art_lat = (
+        (1.0 if a[1] == 1 else 0.0) +
+        (1.0 if a[4] == 1 else 0.0) +
+        (1.0 if a[11] == 1 else 0.0) +
+        (1.0 if a[13] == 1 else 0.0) +
+        (1.0 if a[14] == 1 else 0.0)
+    ) / 5.0
+    biz_lat = (
+        (1.0 if a[1] == 2 else 0.0) +
+        (1.0 if a[4] == 2 else 0.0) +
+        (1.0 if a[11] == 2 else 0.0) +
+        (1.0 if a[13] == 2 else 0.0) +
+        (1.0 if a[14] == 2 else 0.0)
+    ) / 5.0
+    res_lat = (
+        (1.0 if a[1] == 3 else 0.0) +
+        (1.0 if a[4] == 3 else 0.0) +
+        (1.0 if a[11] == 3 else 0.0) +
+        (1.0 if a[13] == 3 else 0.0) +
+        (1.0 if a[14] == 3 else 0.0)
+    ) / 5.0
 
-    # ── Categorical encodings ──────────────────────────────────
-    subject_enc = {0: 3, 1: 5, 2: 6, 3: 4}   # CS/Arts/Business/Science
-    career_enc  = {0: 1, 1: 4, 2: 6, 3: 2}   # Tech/Design/Mgmt/Research
-    company_enc = {0: 2, 1: 3, 2: 4, 3: 1}   # Remote/Studio/Corporate/Structured
-    book_enc    = {0: 2, 1: 4, 2: 3, 3: 1}   # Data/Visual/Spoken/Written
+    academic_base = [17, 14, 11, 8][a[8]]
+    math_score = [9, 7, 5, 3][a[3]]
+    self_learning = [1.0, 0.8, 0.5, 0.2][a[9]]
+    deadline_ctrl = [1.0, 0.8, 0.5, 0.2][a[6]]
 
-    vector = [
-        logical_score,                        # [0]
-        coding_score,                         # [1]
-        hackathon_cnt,                        # [2]
-        ps_raw,                               # [3]
-        self_learn,                           # [4]
-        1 if a[9] in [0, 1] else 0,           # [5]
-        cert_count,                           # [6]
-        workshop_count,                       # [7]
-        rw_raw,                               # [8]
-        memory_score,                         # [9]
-        subject_enc.get(a[4], 3),             # [10]
-        career_enc.get(a[11], 1),             # [11]
-        job_flag,                             # [12]
-        company_enc.get(a[7], 2),             # [13]
-        1 if a[6] in [0, 1] else 0,           # [14]
-        book_enc.get(a[12], 2),               # [15]
-        1 - mgmt_flag,                        # [16]
-        1 if a[6] == 0 else 0,                # [17]
-        1 if a[2] in [0, 1, 2] else 0,        # [18]
-        introvert_flag,                       # [19]
-        academic_pct,                         # [20]
-        math_raw,                             # [21]
-        soft_score,                           # [22]
-    ]
-    return np.array([vector], dtype=float)
+    grade1 = clip(round(academic_base + (math_score - 6) * 0.6), 0, 20)
+    grade2 = clip(round(academic_base + (deadline_ctrl - 0.6) * 3), 0, 20)
+    final_grade = clip(round((grade1 + grade2) / 2 + self_learning * 1.5), 0, 20)
+
+    study_time = int(clip(round(1 + self_learning * 3), 1, 4))
+    failures = int(clip(round((20 - final_grade) / 6), 0, 3))
+    absences = int(clip(round(20 - (academic_base * 0.8) + (3 - a[6]) * 2), 0, 30))
+
+    openness = clip(0.35 + art_lat * 0.35 + res_lat * 0.2, 0, 1)
+    conscientiousness = clip(0.3 + self_learning * 0.4 + deadline_ctrl * 0.3, 0, 1)
+    extraversion = clip(0.2 + (3 - a[5]) * 0.18 + (1 if a[2] == 2 else 0) * 0.15, 0, 1)
+    agreeableness = clip(0.35 + (1 if a[2] in [1, 2] else 0) * 0.25 + (1 if a[12] == 2 else 0) * 0.2, 0, 1)
+    neuroticism = clip(0.2 + (a[6] / 3) * 0.6, 0, 1)
+
+    coding_skill = int(clip(round(2 + tech_lat * 7), 0, 9))
+    communication_skill = int(clip(round(2 + (extraversion * 3.5) + (1 if a[2] == 2 else 0) * 2), 0, 9))
+    analytical_skill = int(clip(round(2 + (1 if a[0] == 0 else 0) * 3 + (math_score / 10) * 4), 0, 9))
+
+    study_hours = int(clip(round(3 + self_learning * 6), 1, 10))
+    consistency = clip(0.25 + self_learning * 0.4 + deadline_ctrl * 0.25, 0, 1)
+    participation = clip(0.2 + (1 if a[2] in [1, 2] else 0) * 0.25 + (extraversion * 0.35), 0, 1)
+
+    tech_interest = int(clip(round(tech_lat * 9), 0, 9))
+    art_interest = int(clip(round(art_lat * 9), 0, 9))
+    business_interest = int(clip(round(biz_lat * 9), 0, 9))
+
+    # Calibration: the training labels default to Research Scientist unless
+    # a domain signal crosses specific thresholds. Push dominant intent above
+    # those boundaries so different quiz profiles lead to different careers.
+    dominant = max(
+        [("tech", tech_lat), ("art", art_lat), ("biz", biz_lat), ("res", res_lat)],
+        key=lambda x: x[1],
+    )[0]
+    if dominant == "tech":
+        coding_skill = max(coding_skill, 8)
+        tech_interest = max(tech_interest, 8)
+    elif dominant == "art":
+        art_interest = max(art_interest, 8)
+    elif dominant == "biz":
+        business_interest = max(business_interest, 8)
+    else:
+        analytical_skill = max(analytical_skill, 8)
+        final_grade = max(final_grade, 13)
+
+    family_income = int(clip(round(2 + (0.5 if a[14] in [0, 1] else -0.2)), 1, 4))
+    has_internet = 1 if (self_learning >= 0.5 or a[10] in [0, 1, 2]) else 0
+
+    base_row = {
+        "grade1": grade1,
+        "grade2": grade2,
+        "final_grade": final_grade,
+        "study_time": study_time,
+        "failures": failures,
+        "absences": absences,
+        "openness": openness,
+        "conscientiousness": conscientiousness,
+        "extraversion": extraversion,
+        "agreeableness": agreeableness,
+        "neuroticism": neuroticism,
+        "coding_skill": coding_skill,
+        "communication_skill": communication_skill,
+        "analytical_skill": analytical_skill,
+        "study_hours": study_hours,
+        "consistency": consistency,
+        "participation": participation,
+        "tech_interest": tech_interest,
+        "art_interest": art_interest,
+        "business_interest": business_interest,
+        "family_income": family_income,
+    }
+
+    expected_cols = []
+    if model is not None and hasattr(model, "feature_names_in_"):
+        expected_cols = [str(c) for c in model.feature_names_in_]
+
+    if not expected_cols:
+        expected_cols = list(base_row.keys()) + ["internet_access_no", "internet_access_yes"]
+
+    row = {col: 0.0 for col in expected_cols}
+    for key, val in base_row.items():
+        if key in row:
+            row[key] = float(val)
+
+    if "internet_access_yes" in row:
+        row["internet_access_yes"] = float(has_internet)
+    if "internet_access_no" in row:
+        row["internet_access_no"] = float(1 - has_internet)
+    if "internet_access" in row:
+        row["internet_access"] = float(has_internet)
+
+    return pd.DataFrame([row], columns=expected_cols)
 
 
-def predict(model, feature_vector: np.ndarray) -> tuple[str, float | None, list[tuple[str, float]]]:
+def _decode_career_label(value, label_encoder=None) -> str:
+    """Decode model output class into a readable career string."""
+    if label_encoder is not None:
+        try:
+            decoded = label_encoder.inverse_transform([int(value)])[0]
+            return str(decoded).strip().lower()
+        except Exception:
+            pass
+        try:
+            decoded = label_encoder.inverse_transform([value])[0]
+            return str(decoded).strip().lower()
+        except Exception:
+            pass
+
+    fallback_map = {
+        0: "data scientist",
+        1: "entrepreneur",
+        2: "research scientist",
+        3: "software developer",
+        4: "ui/ux designer",
+    }
+    try:
+        maybe_num = int(value)
+        if maybe_num in fallback_map:
+            return fallback_map[maybe_num]
+    except Exception:
+        pass
+
+    return str(value).strip().lower()
+
+
+def predict(model, feature_vector: np.ndarray, label_encoder=None) -> tuple[str, float | None, list[tuple[str, float]]]:
     """
     Run inference and return (top_career, confidence_pct, top3_list).
     Handles models without predict_proba gracefully — no crashes.
     """
     raw   = model.predict(feature_vector)
-    top_c = str(raw[0]).strip().lower()
+    top_c = _decode_career_label(raw[0], label_encoder)
     top3: list[tuple[str, float]] = []
     conf: float | None = None
 
@@ -839,7 +936,7 @@ def predict(model, feature_vector: np.ndarray) -> tuple[str, float | None, list[
         probs   = model.predict_proba(feature_vector)[0]
         idx_top = np.argsort(probs)[::-1][:3]
         for idx in idx_top:
-            name = str(model.classes_[idx]).strip().lower()
+            name = _decode_career_label(model.classes_[idx], label_encoder)
             top3.append((name, round(float(probs[idx]) * 100, 1)))
         if top3:
             top_c = top3[0][0]
@@ -1029,7 +1126,7 @@ def page_home() -> None:
 # ═════════════════════════════════════════════════════════════
 # PAGE: QUIZ
 # ═════════════════════════════════════════════════════════════
-def page_quiz(model) -> None:
+def page_quiz(model, label_encoder) -> None:
     if "q_index" not in st.session_state: st.session_state.q_index = 0
     if "answers" not in st.session_state: st.session_state.answers = []
 
@@ -1060,9 +1157,9 @@ def page_quiz(model) -> None:
 
         with st.spinner("Running ML prediction on your profile…"):
             time.sleep(0.9)
-            feat = quiz_to_features(st.session_state.answers)
+            feat = quiz_to_features(st.session_state.answers, model)
             if model:
-                career, conf, top3 = predict(model, feat)
+                career, conf, top3 = predict(model, feat, label_encoder)
             else:
                 # Demo mode when career_model.pkl is absent
                 career, conf = "software developer", 73.6
@@ -1411,14 +1508,33 @@ def main() -> None:
 
     # Load career_model.pkl once (cached)
     model, err = load_model()
+    label_encoder, le_err = load_label_encoder()
     if err and st.session_state.page != "home":
         st.warning(f"⚠️ {err}  —  Running in demo mode; predictions are illustrative.")
+    elif le_err and st.session_state.page != "home":
+        st.warning(f"⚠️ {le_err}.")
+
+    # Normalize older session values that may still contain encoded class IDs.
+    if st.session_state.get("career"):
+        st.session_state.career = _decode_career_label(st.session_state.career, label_encoder)
+
+    if st.session_state.get("top3"):
+        st.session_state.top3 = [
+            (_decode_career_label(name, label_encoder), pct)
+            for name, pct in st.session_state.top3
+        ]
+
+    if st.session_state.get("career") and st.session_state.get("answers"):
+        st.session_state.explanation = generate_explanation(
+            st.session_state.career,
+            st.session_state.answers,
+        )
 
     render_sidebar()
 
     page = st.session_state.page
     if   page == "home":    page_home()
-    elif page == "quiz":    page_quiz(model)
+    elif page == "quiz":    page_quiz(model, label_encoder)
     elif page == "results": page_results()
     elif page == "resume":  page_resume()
     elif page == "chat":    page_chat()
