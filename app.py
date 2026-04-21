@@ -1,8 +1,8 @@
 """
 ╔══════════════════════════════════════════════════════════════════════╗
-║  NextStep AI — Your Smart Career Guide to the Next Step             ║
-║  Features: Quiz · ML Prediction · Roadmap · Mentor · Resume Scan    ║
-║  Model   : career_model.pkl  |  No external APIs                    ║
+║  NextStep AI — Your Smart Career Guide to the Next Step              ║
+║  Features: Quiz · ML Prediction · Roadmap · Mentor · Resume Scan     ║
+║  Model   : career_model.pkl  |  Proprietary ML Engine                ║
 ╚══════════════════════════════════════════════════════════════════════╝
 """
 
@@ -29,255 +29,323 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 def inject_css() -> None:
     st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
 
-/* ── Design tokens ── */
+/* ── Design Tokens: 3D Immersive & Neon Glassmorphism ── */
 :root {
-  --navy:       #05070F;
-  --navy2:      #080C18;
-  --navy3:      #0E1428;
-  --navy4:      #141D35;
-  --glass:      rgba(255,255,255,0.04);
-  --glass-hi:   rgba(255,255,255,0.08);
-  --border:     rgba(255,255,255,0.06);
-  --border-pu:  rgba(139,92,246,0.40);
-  --border-bl:  rgba(59,130,246,0.30);
-  --purple:     #8B5CF6;
-  --purple2:    #A78BFA;
-  --blue:       #3B82F6;
-  --blue2:      #60A5FA;
-  --cyan:       #22D3EE;
-  --green:      #10B981;
-  --rose:       #F43F5E;
-  --amber:      #F59E0B;
-  --snow:       #F0F4FF;
-  --muted:      #6B7A99;
-  --dim:        #2D3A55;
-  --grad:       linear-gradient(135deg,#8B5CF6,#3B82F6);
-  --grad2:      linear-gradient(135deg,#3B82F6,#22D3EE);
-  --serif:      'DM Serif Display', Georgia, serif;
-  --sans:       'Plus Jakarta Sans', sans-serif;
-  --mono:       'Fira Code', monospace;
+  /* Backgrounds */
+  --bg-deep:      #05050A;
+  --bg-space:     #0A0A12;
+  
+  /* Glass & Borders */
+  --glass-base:   rgba(20, 25, 40, 0.45);
+  --glass-hi:     rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --border-pu:    rgba(138, 43, 226, 0.4);
+  --border-cy:    rgba(0, 240, 255, 0.4);
+  
+  /* Neon Accents */
+  --cyan:         #00F0FF;
+  --purple:       #8A2BE2;
+  --purple2:      #B47CFF;
+  --green:        #00FF66;
+  --rose:         #FF0055;
+  --amber:        #FFB000;
+  
+  /* Text */
+  --snow:         #F0F4FF;
+  --muted:        #8B9BB4;
+  --dim:          #4B5A77;
+  
+  /* Gradients */
+  --grad-neon:    linear-gradient(90deg, var(--cyan), var(--purple));
+  --grad-fade:    linear-gradient(135deg, rgba(138,43,226,0.2), rgba(0,240,255,0.1));
+  
+  /* Typography */
+  --display:      'Space Grotesk', sans-serif;
+  --sans:         'Inter', sans-serif;
+  --mono:         'Fira Code', monospace;
 }
 
-/* ── Reset & base ── */
+/* ── Reset & Animated Background ── */
 html, body, [data-testid="stAppViewContainer"] {
-  background: var(--navy) !important;
+  background-color: var(--bg-deep) !important;
   font-family: var(--sans);
   color: var(--snow);
 }
-[data-testid="stAppViewContainer"] {
-  background:
-    radial-gradient(ellipse 100% 60% at 50% -10%, rgba(139,92,246,0.18) 0%, transparent 55%),
-    radial-gradient(ellipse 60%  50% at 95%  80%, rgba(59,130,246,0.10) 0%, transparent 50%),
-    radial-gradient(ellipse 50%  40% at 5%   90%, rgba(34,211,238,0.06) 0%, transparent 45%),
-    var(--navy) !important;
+
+@keyframes slowPan {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
+
+[data-testid="stAppViewContainer"] {
+  background: 
+    radial-gradient(circle at 15% 50%, rgba(138,43,226,0.12), transparent 30%),
+    radial-gradient(circle at 85% 30%, rgba(0,240,255,0.08), transparent 30%),
+    linear-gradient(-45deg, #05050A, #0A0B15, #10081A, #05050A) !important;
+  background-size: 400% 400% !important;
+  animation: slowPan 25s ease infinite !important;
+}
+
 [data-testid="stHeader"]  { background: transparent !important; }
 [data-testid="stToolbar"] { display: none !important; }
-.block-container { padding: 0 2.5rem 5rem !important; max-width: 980px !important; }
-h1,h2,h3 { font-family: var(--serif) !important; color: var(--snow) !important; }
+.block-container { padding: 0 2.5rem 5rem !important; max-width: 1000px !important; }
+h1, h2, h3 { font-family: var(--display) !important; font-weight: 700 !important; color: var(--snow) !important; }
 
 /* ── Sidebar ── */
 [data-testid="stSidebar"] {
-  background: var(--navy2) !important;
-  border-right: 1px solid var(--border) !important;
+  background: rgba(5, 5, 10, 0.75) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border-right: 1px solid var(--glass-border) !important;
 }
 
 /* ── Nav elements ── */
 .nav-brand {
   padding: 1.8rem 1.2rem 1rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--glass-border);
   margin-bottom: 0.8rem;
 }
 .nav-logo {
-  display: flex; align-items: center; gap: 10px;
-  font-family: var(--sans); font-size: 1.1rem; font-weight: 800;
+  display: flex; align-items: center; gap: 12px;
+  font-family: var(--display); font-size: 1.25rem; font-weight: 700;
   letter-spacing: -0.3px; color: var(--snow); margin-bottom: 4px;
 }
 .nav-logo-icon {
-  width: 30px; height: 30px; border-radius: 9px;
-  background: var(--grad);
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--grad-neon);
   display: flex; align-items: center; justify-content: center;
-  font-size: 14px; flex-shrink: 0;
+  font-size: 16px; flex-shrink: 0;
+  box-shadow: 0 0 12px var(--border-pu);
 }
-.nav-tagline  { font-size: 11px; color: var(--muted); padding-left: 40px; line-height: 1.4; }
-.nav-slabel   { font-family: var(--mono); font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--dim); padding: 0 1.2rem; margin: 1rem 0 6px; }
-.nav-div      { height: 1px; background: var(--border); margin: 0.8rem; }
-.nav-status   { margin: 0.8rem; padding: 12px 14px; background: var(--glass); border: 1px solid var(--border); border-radius: 14px; }
-.nav-s-career { font-size: 13px; font-weight: 600; color: var(--snow); margin-bottom: 2px; }
-.nav-s-label  { font-family: var(--mono); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
-.nav-footer   { position: absolute; bottom: 1.2rem; left: 0; right: 0; text-align: center; font-family: var(--mono); font-size: 9px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; }
+.nav-tagline  { font-size: 11px; color: var(--muted); padding-left: 44px; line-height: 1.5; font-family: var(--sans); }
+.nav-slabel   { font-family: var(--mono); font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--dim); padding: 0 1.2rem; margin: 1.2rem 0 8px; }
+.nav-div      { height: 1px; background: var(--glass-border); margin: 1rem 0.8rem; }
+.nav-status   { margin: 0.8rem; padding: 14px; background: var(--glass-base); border: 1px solid var(--glass-border); border-radius: 12px; box-shadow: inset 0 0 20px rgba(0,0,0,0.5); }
+.nav-s-career { font-family: var(--display); font-size: 14px; font-weight: 600; color: var(--cyan); margin-bottom: 4px; text-shadow: 0 0 10px var(--border-cy); }
+.nav-s-label  { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+.nav-footer   { margin-top: 2rem; padding-bottom: 1.2rem; text-align: center; font-family: var(--mono); font-size: 9px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; }
 
-/* ── Glass cards ── */
+/* ── 3D Glass Cards (The Parallax Effect) ── */
 .card {
-  background: var(--glass);
-  border: 1px solid var(--border);
-  border-radius: 20px; padding: 1.8rem 2rem; margin-bottom: 1.4rem;
-  position: relative; overflow: hidden; backdrop-filter: blur(12px);
-  transition: border-color 0.3s;
+  background: var(--glass-base);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px; 
+  padding: 2rem; 
+  margin-bottom: 1.5rem;
+  position: relative; 
+  overflow: hidden; 
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform-style: preserve-3d;
 }
+
+/* Diagonal glass shine effect */
 .card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(139,92,246,0.28), transparent);
+  content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+  transform: skewX(-20deg); transition: 0.6s; z-index: 1; pointer-events: none;
 }
-.card:hover { border-color: rgba(139,92,246,0.22); }
-.card-pu { border-color: rgba(139,92,246,0.28) !important; background: linear-gradient(135deg,rgba(139,92,246,0.08),var(--glass)); }
-.card-bl { border-color: rgba(59,130,246,0.28)  !important; background: linear-gradient(135deg,rgba(59,130,246,0.08),var(--glass)); }
-.card-cy { border-color: rgba(34,211,238,0.28)  !important; background: linear-gradient(135deg,rgba(34,211,238,0.06),var(--glass)); }
-.card-gr { border-color: rgba(16,185,129,0.28)  !important; background: linear-gradient(135deg,rgba(16,185,129,0.06),var(--glass)); }
-.card-ro { border-color: rgba(244,63,94,0.28)   !important; background: linear-gradient(135deg,rgba(244,63,94,0.06),var(--glass)); }
-.card-am { border-color: rgba(245,158,11,0.28)  !important; background: linear-gradient(135deg,rgba(245,158,11,0.06),var(--glass)); }
+
+/* Hover Physics */
+.card:hover {
+  transform: translateY(-6px) perspective(1000px) rotateX(2deg) rotateY(-1deg);
+  border-color: rgba(138, 43, 226, 0.4); 
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 15px var(--border-pu);
+}
+.card:hover::before { left: 150%; }
+
+/* Card Modifiers */
+.card-pu { border-color: rgba(138,43,226,0.3) !important; background: linear-gradient(135deg, rgba(138,43,226,0.05), var(--glass-base)); }
+.card-bl { border-color: rgba(0,240,255,0.3) !important; background: linear-gradient(135deg, rgba(0,240,255,0.05), var(--glass-base)); }
+.card-cy { border-color: rgba(0,255,102,0.2) !important; background: linear-gradient(135deg, rgba(0,255,102,0.05), var(--glass-base)); }
+.card-gr { border-color: rgba(255,176,0,0.2) !important; background: linear-gradient(135deg, rgba(255,176,0,0.05), var(--glass-base)); }
+.card-ro { border-color: rgba(255,0,85,0.2) !important; background: linear-gradient(135deg, rgba(255,0,85,0.05), var(--glass-base)); }
+.card-am { border-color: rgba(255,176,0,0.2) !important; background: linear-gradient(135deg, rgba(255,176,0,0.05), var(--glass-base)); }
 
 /* ── Hero ── */
-.hero { text-align: center; padding: 5rem 1rem 3rem; position: relative; }
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+  100% { transform: translateY(0px); }
+}
+
+.hero { text-align: center; padding: 6rem 1rem 4rem; position: relative; animation: float 6s ease-in-out infinite; }
+
 .hero-eyebrow {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-family: var(--mono); font-size: 10px; letter-spacing: 3px;
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 3px;
   text-transform: uppercase; color: var(--purple2);
-  background: rgba(139,92,246,0.10); border: 1px solid rgba(139,92,246,0.26);
-  border-radius: 100px; padding: 6px 16px; margin-bottom: 1.6rem;
+  background: rgba(138, 43, 226, 0.1); border: 1px solid var(--border-pu);
+  border-radius: 100px; padding: 8px 20px; margin-bottom: 2rem;
+  box-shadow: 0 0 15px rgba(138, 43, 226, 0.15);
 }
-.hero-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--purple); animation: pulse 2s infinite; }
+
+@keyframes pulse-dot { 0%,100%{opacity:1; box-shadow: 0 0 8px var(--cyan);} 50%{opacity:.4; box-shadow: none;} }
+.hero-eyebrow .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); animation: pulse-dot 2s infinite; }
+
 .hero-title {
-  font-family: var(--serif); font-size: clamp(2.8rem,6vw,4.8rem);
-  font-weight: 400; line-height: 1.06; letter-spacing: -1.5px;
-  color: var(--snow); margin-bottom: 1.2rem;
+  font-family: var(--display); font-size: clamp(3.2rem, 7vw, 5.5rem);
+  font-weight: 700; line-height: 1.1; letter-spacing: -2px;
+  color: var(--snow); margin-bottom: 1.5rem;
 }
-.hero-title em { font-style: italic; color: var(--purple2); }
+.hero-title em { font-style: normal; color: var(--cyan); text-shadow: 0 0 20px var(--border-cy); }
 .hero-grad-text {
-  background: var(--grad); -webkit-background-clip: text;
+  background: var(--grad-neon); -webkit-background-clip: text;
   -webkit-text-fill-color: transparent; background-clip: text;
+  text-shadow: 0 0 30px rgba(0, 240, 255, 0.3);
 }
-.hero-sub { font-size: 1.05rem; color: var(--muted); font-weight: 400; max-width: 500px; margin: 0 auto 2.5rem; line-height: 1.78; }
-.hero-pills { display: flex; justify-content: center; gap: 0.8rem; flex-wrap: wrap; }
-.hero-pill  { display: flex; align-items: center; gap: 7px; background: var(--glass); border: 1px solid var(--border); border-radius: 100px; padding: 7px 16px; font-size: 12px; color: var(--muted); font-weight: 500; }
+
+.hero-sub { font-size: 1.15rem; color: var(--muted); font-weight: 400; max-width: 580px; margin: 0 auto 3rem; line-height: 1.7; }
+.hero-pills { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+.hero-pill  { 
+  display: flex; align-items: center; gap: 8px; background: var(--glass-base); 
+  border: 1px solid var(--glass-border); border-radius: 100px; padding: 8px 18px; 
+  font-size: 13px; color: var(--snow); font-weight: 500;
+  transition: all 0.3s;
+}
+.hero-pill:hover {
+  transform: translateY(-2px); border-color: var(--cyan);
+  box-shadow: 0 5px 15px rgba(0,240,255,0.2); color: var(--cyan);
+}
 
 /* ── Section labels ── */
-.s-eye   { font-family: var(--mono); font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--purple2); margin-bottom: .5rem; }
-.s-title { font-family: var(--serif); font-size: 2.1rem; color: var(--snow); margin-bottom: .6rem; line-height: 1.15; }
-.s-sub   { font-size: 14px; color: var(--muted); margin-bottom: 1.8rem; line-height: 1.7; }
+.s-eye   { font-family: var(--mono); font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--cyan); margin-bottom: .5rem; text-shadow: 0 0 8px rgba(0,240,255,0.4); }
+.s-title { font-family: var(--display); font-size: 2.2rem; font-weight: 700; color: var(--snow); margin-bottom: .6rem; line-height: 1.15; letter-spacing: -0.5px; text-shadow: 0 0 15px rgba(255,255,255,0.1); }
+.s-sub   { font-size: 15px; color: var(--muted); margin-bottom: 2rem; line-height: 1.7; font-weight: 300; }
 
 /* ── Quiz ── */
 .quiz-hdr {
-  background: var(--glass); border: 1px solid var(--border); border-radius: 16px;
-  padding: 1rem 1.5rem; margin-bottom: 1.5rem;
+  background: var(--glass-base); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border); border-radius: 16px;
+  padding: 1.2rem 1.8rem; margin-bottom: 1.5rem;
   display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
 }
-.quiz-prog-label { font-family: var(--mono); font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
-.quiz-prog-bg    { width: 240px; height: 3px; background: var(--navy3); border-radius: 100px; overflow: hidden; }
-.quiz-prog-fill  { height: 100%; background: linear-gradient(90deg,var(--purple),var(--blue)); border-radius: 100px; transition: width 0.5s ease; }
-.quiz-step-badge { font-family: var(--mono); font-size: 12px; color: var(--purple2); background: rgba(139,92,246,0.10); border: 1px solid rgba(139,92,246,0.24); border-radius: 100px; padding: 4px 14px; }
-.quiz-q-num  { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--purple2); margin-bottom: .5rem; }
-.quiz-q-text { font-family: var(--serif); font-size: 1.55rem; color: var(--snow); margin-bottom: 1.8rem; line-height: 1.35; }
+.quiz-prog-label { font-family: var(--mono); font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.quiz-prog-bg    { width: 260px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 100px; overflow: hidden; }
+.quiz-prog-fill  { height: 100%; background: var(--grad-neon); border-radius: 100px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px var(--cyan); }
+.quiz-step-badge { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--cyan); background: rgba(0,240,255,0.1); border: 1px solid rgba(0,240,255,0.3); border-radius: 100px; padding: 6px 16px; box-shadow: 0 0 10px rgba(0,240,255,0.15); }
+.quiz-q-num  { font-family: var(--mono); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--purple2); margin-bottom: .8rem; }
+.quiz-q-text { font-family: var(--display); font-size: 1.7rem; font-weight: 600; color: var(--snow); margin-bottom: 2rem; line-height: 1.4; }
 
 /* ── Result ── */
 .result-badge {
   display: inline-flex; align-items: center; gap: 8px;
-  font-family: var(--mono); font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
-  color: var(--amber); background: rgba(245,158,11,0.10);
-  border: 1px solid rgba(245,158,11,0.26); border-radius: 100px; padding: 6px 16px; margin-bottom: 1.2rem;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 3px; text-transform: uppercase; font-weight: 600;
+  color: var(--cyan); background: rgba(0,240,255,0.1);
+  border: 1px solid rgba(0,240,255,0.3); border-radius: 100px; padding: 8px 20px; margin-bottom: 1.5rem;
+  box-shadow: 0 0 15px rgba(0,240,255,0.2);
 }
-.result-icon   { font-size: 5.5rem; line-height: 1; margin-bottom: .5rem; }
-.result-career { font-family: var(--serif); font-size: clamp(2rem,5vw,3.4rem); color: var(--snow); margin-bottom: .4rem; }
-.result-conf   { font-family: var(--mono); font-size: 13px; color: var(--green); margin-bottom: 1rem; }
-.result-expl   { font-size: 15px; color: var(--muted); max-width: 480px; margin: 0 auto; line-height: 1.75; }
+.result-icon   { font-size: 6rem; line-height: 1; margin-bottom: 1rem; filter: drop-shadow(0 0 20px rgba(255,255,255,0.2)); transform: translateZ(30px); }
+.result-career { font-family: var(--display); font-size: clamp(2.5rem,6vw,4rem); font-weight: 700; color: var(--snow); margin-bottom: .5rem; text-shadow: 0 0 20px rgba(138,43,226,0.4); transform: translateZ(20px); }
+.result-conf   { font-family: var(--mono); font-size: 14px; font-weight: 500; color: var(--cyan); margin-bottom: 1.2rem; text-shadow: 0 0 10px rgba(0,240,255,0.3); }
+.result-expl   { font-size: 16px; color: var(--muted); max-width: 520px; margin: 0 auto; line-height: 1.8; transform: translateZ(10px); }
 
 /* ── Personality chips ── */
-.p-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 16px; border-radius: 100px; font-family: var(--mono); font-size: 11px; letter-spacing: 1px; font-weight: 500; margin: 3px; }
-.pc-an  { background: rgba(59,130,246,0.12);  border: 1px solid rgba(59,130,246,0.30);  color: var(--blue2); }
-.pc-cr  { background: rgba(245,158,11,0.12);  border: 1px solid rgba(245,158,11,0.30);  color: var(--amber); }
-.pc-in  { background: rgba(139,92,246,0.12);  border: 1px solid rgba(139,92,246,0.30);  color: var(--purple2); }
-.pc-ex  { background: rgba(244,63,94,0.12);   border: 1px solid rgba(244,63,94,0.30);   color: var(--rose); }
-.pc-ld  { background: rgba(16,185,129,0.12);  border: 1px solid rgba(16,185,129,0.30);  color: var(--green); }
+.p-chip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; border-radius: 100px; font-family: var(--mono); font-size: 12px; letter-spacing: 1px; font-weight: 600; margin: 4px; transition: all 0.3s; }
+.p-chip:hover { transform: translateY(-2px) scale(1.05); }
+.pc-an  { background: rgba(0,240,255,0.1);  border: 1px solid rgba(0,240,255,0.3);  color: var(--cyan); box-shadow: 0 0 10px rgba(0,240,255,0.1); }
+.pc-cr  { background: rgba(255,176,0,0.1);  border: 1px solid rgba(255,176,0,0.3);  color: var(--amber); box-shadow: 0 0 10px rgba(255,176,0,0.1); }
+.pc-in  { background: rgba(138,43,226,0.1); border: 1px solid rgba(138,43,226,0.3); color: var(--purple2); box-shadow: 0 0 10px rgba(138,43,226,0.1); }
+.pc-ex  { background: rgba(255,0,85,0.1);   border: 1px solid rgba(255,0,85,0.3);   color: var(--rose); box-shadow: 0 0 10px rgba(255,0,85,0.1); }
+.pc-ld  { background: rgba(0,255,102,0.1);  border: 1px solid rgba(0,255,102,0.3);  color: var(--green); box-shadow: 0 0 10px rgba(0,255,102,0.1); }
 
 /* ── Confidence ring ── */
 .conf-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 0; }
-.conf-outer { width: 130px; height: 130px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; }
-.conf-svg   { position: absolute; inset: 0; transform: rotate(-90deg); }
+.conf-outer { width: 140px; height: 140px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; filter: drop-shadow(0 0 15px rgba(0,240,255,0.2)); }
+.conf-svg   { position: absolute; inset: 0; transform: rotate(-90deg); transition: stroke-dasharray 1s ease-out; }
 .conf-inner { display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-.conf-num   { font-family: var(--serif); font-size: 2.5rem; color: var(--snow); line-height: 1; }
-.conf-unit  { font-family: var(--mono); font-size: 9px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+.conf-num   { font-family: var(--display); font-size: 3rem; font-weight: 700; color: var(--snow); line-height: 1; text-shadow: 0 0 15px var(--cyan); }
+.conf-unit  { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--cyan); text-transform: uppercase; margin-top: 4px; }
 
 /* ── Top-3 rows ── */
-.t3-row  { background: var(--glass); border: 1px solid var(--border); border-radius: 14px; padding: 1rem 1.4rem; display: flex; align-items: center; margin-bottom: .8rem; transition: border-color 0.2s, transform 0.15s; }
-.t3-row:hover { border-color: rgba(139,92,246,0.28); transform: translateX(4px); }
-.t3-rank { font-family: var(--mono); font-size: 11px; color: var(--dim); width: 26px; flex-shrink: 0; }
-.t3-name { font-size: 14px; font-weight: 600; color: var(--snow); flex: 1; margin-left: 12px; }
-.t3-bar-bg   { width: 80px; height: 3px; background: var(--navy3); border-radius: 100px; overflow: hidden; }
-.t3-bar-fill { height: 100%; border-radius: 100px; background: var(--grad); }
-.t3-pct  { font-family: var(--mono); font-size: 12px; color: var(--purple2); margin-left: 12px; min-width: 42px; text-align: right; }
-.t3-icon { font-size: 18px; margin-left: 10px; }
+.t3-row  { background: var(--glass-base); border: 1px solid var(--glass-border); border-radius: 14px; padding: 1.2rem 1.5rem; display: flex; align-items: center; margin-bottom: 1rem; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.t3-row:hover { border-color: var(--purple); transform: translateX(8px) scale(1.02); box-shadow: -5px 5px 20px rgba(138,43,226,0.2); background: rgba(138,43,226,0.08); }
+.t3-rank { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--purple2); width: 28px; flex-shrink: 0; }
+.t3-name { font-family: var(--display); font-size: 15px; font-weight: 600; color: var(--snow); flex: 1; margin-left: 12px; letter-spacing: 0.5px; }
+.t3-bar-bg   { width: 90px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 100px; overflow: hidden; }
+.t3-bar-fill { height: 100%; border-radius: 100px; background: var(--grad-neon); box-shadow: 0 0 8px var(--cyan); }
+.t3-pct  { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--cyan); margin-left: 15px; min-width: 45px; text-align: right; text-shadow: 0 0 8px rgba(0,240,255,0.3); }
+.t3-icon { font-size: 20px; margin-left: 12px; filter: drop-shadow(0 0 8px rgba(255,255,255,0.2)); }
 
 /* ── Roadmap ── */
-.rm-step   { display: flex; gap: 1.4rem; margin-bottom: 1.8rem; }
+.rm-step   { display: flex; gap: 1.5rem; margin-bottom: 2rem; }
 .rm-left   { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
 .rm-circle {
-  width: 42px; height: 42px; border-radius: 50%; background: var(--grad);
+  width: 48px; height: 48px; border-radius: 50%; background: var(--bg-space);
   display: flex; align-items: center; justify-content: center;
-  font-family: var(--mono); font-size: 13px; color: #fff; font-weight: 500;
-  flex-shrink: 0; box-shadow: 0 0 18px rgba(139,92,246,0.40);
+  font-family: var(--display); font-size: 15px; color: var(--cyan); font-weight: 700;
+  flex-shrink: 0; border: 2px solid var(--cyan); box-shadow: 0 0 15px rgba(0,240,255,0.3);
+  z-index: 2; transition: all 0.3s;
 }
-.rm-line   { width: 2px; flex: 1; margin: 6px 0; min-height: 24px; background: linear-gradient(to bottom, rgba(139,92,246,0.32), transparent); }
+.rm-step:hover .rm-circle { transform: scale(1.1); box-shadow: 0 0 25px rgba(0,240,255,0.6); background: rgba(0,240,255,0.1); }
+.rm-line   { width: 2px; flex: 1; margin: 8px 0; min-height: 30px; background: linear-gradient(to bottom, var(--cyan), transparent); opacity: 0.5; }
 .rm-body   { padding-top: 8px; flex: 1; }
-.rm-tag    { font-family: var(--mono); font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--purple2); margin-bottom: 4px; }
-.rm-title  { font-size: 16px; font-weight: 700; color: var(--snow); margin-bottom: 5px; }
-.rm-desc   { font-size: 13px; color: var(--muted); line-height: 1.65; margin-bottom: .7rem; }
-.sk-tag    { display: inline-block; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 3px 10px; font-family: var(--mono); font-size: 11px; color: var(--muted); margin: 2px 3px 2px 0; }
-.sk-pu     { background: rgba(139,92,246,0.11); border-color: rgba(139,92,246,0.28); color: var(--purple2); }
-.sk-bl     { background: rgba(59,130,246,0.11);  border-color: rgba(59,130,246,0.28);  color: var(--blue2); }
-.sk-gr     { background: rgba(16,185,129,0.11);  border-color: rgba(16,185,129,0.28);  color: var(--green); }
+.rm-tag    { font-family: var(--mono); font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--purple2); margin-bottom: 6px; }
+.rm-title  { font-family: var(--display); font-size: 1.2rem; font-weight: 700; color: var(--snow); margin-bottom: 6px; }
+.rm-desc   { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 1rem; }
+.sk-tag    { display: inline-block; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 6px; padding: 4px 12px; font-family: var(--mono); font-size: 11px; color: var(--snow); margin: 3px 4px 3px 0; transition: all 0.2s; }
+.sk-tag:hover { transform: translateY(-2px); border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 10px rgba(0,240,255,0.2); }
+.sk-pu     { border-color: rgba(138,43,226,0.3); color: var(--purple2); }
+.sk-bl     { border-color: rgba(0,240,255,0.3); color: var(--cyan); }
+.sk-gr     { border-color: rgba(0,255,102,0.3); color: var(--green); }
 
 /* ── Chat ── */
-.chat-b    { max-width: 80%; margin-bottom: 1.1rem; }
+.chat-b    { max-width: 85%; margin-bottom: 1.5rem; animation: fadeUp 0.4s ease-out forwards; }
 .chat-b.u  { margin-left: auto; }
-.chat-meta { font-family: var(--mono); font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--dim); margin-bottom: 5px; padding: 0 4px; }
-.chat-b.u .chat-meta { text-align: right; }
-.chat-txt  { padding: .9rem 1.25rem; border-radius: 18px; font-size: 14px; line-height: 1.68; }
-.chat-b.u .chat-txt { background: linear-gradient(135deg,rgba(139,92,246,0.20),rgba(59,130,246,0.15)); border: 1px solid rgba(139,92,246,0.28); color: var(--snow); border-bottom-right-radius: 4px; }
-.chat-b.bot .chat-txt { background: var(--glass); border: 1px solid var(--border); color: var(--muted); border-bottom-left-radius: 4px; }
+.chat-meta { font-family: var(--mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; padding: 0 4px; }
+.chat-b.u .chat-meta { text-align: right; color: var(--cyan); }
+.chat-txt  { padding: 1rem 1.4rem; border-radius: 18px; font-size: 15px; line-height: 1.7; backdrop-filter: blur(10px); }
+.chat-b.u .chat-txt { background: rgba(0,240,255,0.08); border: 1px solid rgba(0,240,255,0.3); color: var(--snow); border-bottom-right-radius: 4px; box-shadow: 0 5px 15px rgba(0,240,255,0.1); }
+.chat-b.bot .chat-txt { background: var(--glass-base); border: 1px solid var(--glass-border); color: var(--snow); border-bottom-left-radius: 4px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
 
 /* ── Resume ── */
-.sug-row  { display: flex; gap: 12px; align-items: flex-start; padding: .8rem 0; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--muted); line-height: 1.65; }
+.sug-row  { display: flex; gap: 14px; align-items: flex-start; padding: 1rem 0; border-bottom: 1px solid var(--glass-border); font-size: 14px; color: var(--muted); line-height: 1.7; transition: background 0.3s; }
+.sug-row:hover { background: rgba(255,255,255,0.02); border-radius: 8px; padding: 1rem; margin-left: -1rem; margin-right: -1rem; border-bottom-color: transparent; }
 .sug-row:last-child { border-bottom: none; }
-.kw-found   { display: inline-block; padding: 3px 10px; border-radius: 8px; font-family: var(--mono); font-size: 11px; margin: 2px 3px; background: rgba(16,185,129,0.11); border: 1px solid rgba(16,185,129,0.28); color: var(--green); }
-.kw-missing { display: inline-block; padding: 3px 10px; border-radius: 8px; font-family: var(--mono); font-size: 11px; margin: 2px 3px; background: rgba(244,63,94,0.10); border: 1px solid rgba(244,63,94,0.24); color: var(--rose); }
+.kw-found   { display: inline-block; padding: 4px 12px; border-radius: 6px; font-family: var(--mono); font-size: 11px; font-weight: 600; margin: 2px 3px; background: rgba(0,255,102,0.1); border: 1px solid rgba(0,255,102,0.3); color: var(--green); box-shadow: 0 0 8px rgba(0,255,102,0.15); }
+.kw-missing { display: inline-block; padding: 4px 12px; border-radius: 6px; font-family: var(--mono); font-size: 11px; font-weight: 600; margin: 2px 3px; background: rgba(255,0,85,0.1); border: 1px solid rgba(255,0,85,0.3); color: var(--rose); box-shadow: 0 0 8px rgba(255,0,85,0.15); }
 
 /* ── Buttons ── */
 .stButton > button {
-  font-family: var(--sans) !important; font-weight: 600 !important;
-  font-size: 14px !important; border-radius: 12px !important; border: none !important;
-  cursor: pointer !important; transition: all 0.22s !important; letter-spacing: 0.3px !important;
-  background: var(--grad) !important; color: #fff !important;
-  box-shadow: 0 4px 20px rgba(139,92,246,0.28) !important; padding: .75rem 1.5rem !important;
+  font-family: var(--display) !important; font-weight: 600 !important;
+  font-size: 15px !important; border-radius: 12px !important; border: none !important;
+  cursor: pointer !important; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+  letter-spacing: 0.5px !important; text-transform: uppercase !important;
+  background: var(--grad-neon) !important; color: #fff !important;
+  box-shadow: 0 6px 20px rgba(138,43,226,0.3) !important; padding: 0.8rem 1.8rem !important;
 }
-.stButton > button:hover { transform: translateY(-2px) !important; box-shadow: 0 8px 28px rgba(139,92,246,0.42) !important; }
+.stButton > button:hover { transform: translateY(-3px) scale(1.02) !important; box-shadow: 0 10px 25px rgba(0,240,255,0.5), 0 0 15px rgba(138,43,226,0.4) !important; }
 
 /* ── Text inputs ── */
 .stTextArea textarea {
-  background: var(--navy3) !important; border: 1px solid var(--border) !important;
-  border-radius: 14px !important; color: var(--snow) !important;
-  font-family: var(--mono) !important; font-size: 13px !important;
-}
-.stTextArea textarea:focus { border-color: rgba(139,92,246,0.44) !important; box-shadow: 0 0 0 3px rgba(139,92,246,0.10) !important; }
-.stTextInput input {
-  background: var(--navy3) !important; border: 1px solid var(--border) !important;
+  background: rgba(10,15,30,0.6) !important; border: 1px solid var(--glass-border) !important;
   border-radius: 12px !important; color: var(--snow) !important;
-  font-family: var(--sans) !important;
+  font-family: var(--mono) !important; font-size: 14px !important; transition: all 0.3s !important;
 }
-.stTextInput input:focus { border-color: rgba(139,92,246,0.44) !important; }
+.stTextArea textarea:focus { border-color: var(--cyan) !important; box-shadow: 0 0 15px rgba(0,240,255,0.2) !important; outline: none !important; }
+.stTextInput input {
+  background: rgba(10,15,30,0.6) !important; border: 1px solid var(--glass-border) !important;
+  border-radius: 10px !important; color: var(--snow) !important;
+  font-family: var(--sans) !important; transition: all 0.3s !important;
+}
+.stTextInput input:focus { border-color: var(--cyan) !important; box-shadow: 0 0 15px rgba(0,240,255,0.2) !important; outline: none !important; }
 
 /* ── Misc ── */
-.hdiv { height: 1px; background: linear-gradient(90deg,transparent,rgba(139,92,246,0.14),transparent); margin: 2.5rem 0; }
+.hdiv { height: 1px; background: linear-gradient(90deg, transparent, rgba(0,240,255,0.2), rgba(138,43,226,0.2), transparent); margin: 3rem 0; box-shadow: 0 0 10px rgba(0,240,255,0.2); }
 .footer { text-align: center; padding: 3rem 0 1.5rem; font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; line-height: 2.4; }
-[data-testid="stAlert"] { border-radius: 12px !important; font-family: var(--sans) !important; }
+[data-testid="stAlert"] { border-radius: 12px !important; font-family: var(--sans) !important; background: var(--glass-base) !important; border: 1px solid var(--glass-border) !important; backdrop-filter: blur(10px) !important; color: var(--snow) !important;}
 
 /* ── Animations ── */
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+@keyframes fadeUp { from{opacity:0; transform:translateY(15px) scale(0.98);} to{opacity:1; transform:none;} }
 </style>
 """, unsafe_allow_html=True)
-
 
 # ═════════════════════════════════════════════════════════════
 # QUIZ — 15 behavioural MCQs
@@ -496,67 +564,67 @@ ROADMAPS: dict[str, list[dict]] = {
 # ═════════════════════════════════════════════════════════════
 CHATBOT_KB: dict[str, dict[str, str]] = {
     "_general": {
-        "salary":        "Salaries vary widely. In India, entry-level tech roles range 4–12 LPA; senior roles reach 25–60 LPA. In the US, junior engineers earn 70–110K USD; senior roles often exceed 150K USD.",
-        "internship":    "To land internships: build 2–3 projects on GitHub, connect with founders and HRs on LinkedIn, and apply via Internshala, Unstop, AngelList, and LinkedIn. Thoughtful cold emails work surprisingly well.",
-        "resume":        "A strong resume is one page, ATS-friendly, and highlights measurable impact using numbers. Use the STAR format for experience bullets. Try the Resume Analyzer tab above for personalised feedback.",
-        "certifications":"Certifications add real credibility. Prioritise Google, AWS, Microsoft, Coursera, or edX certs that align directly with your target career path.",
-        "college":       "Your college name helps open doors but is far from the whole story. A strong GitHub portfolio, live projects, and clear communication often outweigh institution prestige at most companies.",
+        "salary":        "Salaries vary widely based on skill and location. In India, entry-level tech roles range 4–12 LPA; senior roles reach 25–60+ LPA. In the US, junior engineers earn $70K–$110K; senior roles often exceed $160K+.",
+        "internship":    "To land internships: build 2–3 live projects on GitHub, connect with founders and recruiters on LinkedIn, and apply via Internshala, Unstop, Wellfound (formerly AngelList), and LinkedIn. Thoughtful, personalized cold emails to startup founders work surprisingly well.",
+        "resume":        "A strong resume is strictly one page, ATS-friendly, and highlights measurable impact using numbers (e.g., 'Reduced load time by 20%'). Use the STAR format for experience bullets. Try the Resume Analyzer tab above for personalised feedback.",
+        "certifications":"Certifications add real credibility if they match your stack. Prioritise official Google Cloud, AWS, Microsoft Azure, Coursera, or edX certs that align directly with your target career path.",
+        "college":       "Your college name helps open doors, but it is far from the whole story. A strong GitHub portfolio, live deployed projects, and clear communication during interviews often outweigh institution prestige at modern tech companies.",
     },
     "software developer": {
-        "skills":    "Master: Python or JavaScript, DSA, REST APIs, React (frontend), Django or Node.js (backend), Docker, and Git. TypeScript is increasingly essential at top companies.",
-        "start":     "Start with Python fundamentals, build a CRUD app, learn React, connect frontend and backend, then deploy. Aim for three live deployed projects within six months.",
-        "next":      "After the basics: learn TypeScript, system design patterns, contribute to open-source, and solve 100+ LeetCode medium problems consistently.",
-        "projects":  "Build: 1) A task manager with auth, 2) A real-time chat app, 3) A well-documented REST API. All three should be live, deployed, and on GitHub.",
-        "interview": "Practice DSA on LeetCode daily, study system design via Grokking the System Design Interview, and do mock interviews on Pramp or interviewing.io.",
+        "skills":    "Master: Python or JavaScript, Data Structures & Algorithms (DSA), REST APIs, React (frontend), Django or Node.js (backend), Docker, and Git. TypeScript is increasingly essential at top companies.",
+        "start":     "Start with Python fundamentals, build a CRUD app, learn React, connect the frontend and backend, then deploy it. Aim for three live deployed projects within your first six months.",
+        "next":      "After the basics: learn TypeScript, understand microservices and system design patterns, contribute to open-source, and consistently solve LeetCode Medium problems.",
+        "projects":  "Build: 1) A task manager with secure authentication, 2) A real-time chat app using WebSockets, 3) A well-documented RESTful API. All three should be live, deployed, and linked on your GitHub.",
+        "interview": "Practice DSA on LeetCode daily, study system design via 'Grokking the System Design Interview', and conduct mock technical interviews on platforms like Pramp or interviewing.io.",
     },
     "data scientist": {
-        "skills":    "Master: Python, Pandas, NumPy, scikit-learn, SQL, Statistics, Matplotlib or Seaborn, and at least one deep learning framework such as PyTorch or TensorFlow.",
-        "start":     "Python first, then Statistics, then Pandas, then ML with scikit-learn, then your first Kaggle notebook. Introduce deep learning incrementally afterward.",
-        "next":      "Specialise in NLP with Hugging Face, Computer Vision with CNNs, or MLOps with MLflow and Docker. Go deep in one area rather than shallow across many.",
-        "projects":  "Build: 1) A full EDA and prediction notebook on Kaggle, 2) A sentiment analyser, 3) A deployed ML model as a Streamlit or FastAPI app.",
-        "interview": "Revise bias-variance tradeoff, regularisation, and ensemble methods. Practice SQL. Prepare a strong end-to-end project walkthrough.",
+        "skills":    "Master: Python, Pandas, NumPy, scikit-learn, SQL, Applied Statistics, Matplotlib/Seaborn, and at least one deep learning framework (PyTorch or TensorFlow). Familiarity with Prompt Engineering and GenAI is highly recommended.",
+        "start":     "Python first, then Statistics, then Pandas, then ML with scikit-learn, and finally your first Kaggle notebook. Introduce deep learning and neural networks incrementally afterward.",
+        "next":      "Specialise in NLP (using Hugging Face), Computer Vision (CNNs/ViTs), or MLOps (MLflow and Docker). Go deep in one specific area rather than being shallow across many.",
+        "projects":  "Build: 1) A full EDA and prediction notebook on Kaggle, 2) A sentiment analyser or RAG (Retrieval-Augmented Generation) pipeline, 3) A deployed ML model as a Streamlit or FastAPI web app.",
+        "interview": "Revise the bias-variance tradeoff, regularisation, ensemble methods, and SQL window functions. Prepare a strong, end-to-end project walkthrough explaining your data cleaning decisions.",
     },
     "machine learning engineer": {
-        "skills":    "Core: Python, Linear Algebra, PyTorch or TensorFlow, MLOps tools like Docker and Kubernetes, FastAPI for model serving, and cloud platforms like AWS SageMaker.",
-        "start":     "Math foundations → Python → ML theory → PyTorch → train your first models → MLOps → deploy a model to production.",
-        "next":      "Specialise in NLP, Computer Vision, or Reinforcement Learning. Contribute to Hugging Face or Papers With Code. Target MLE roles at AI-first companies.",
-        "projects":  "Build: 1) A fine-tuned LLM application, 2) A computer vision classifier deployed as an API, 3) A recommender system with offline and online evaluation.",
-        "interview": "Prepare ML system design questions, Python exercises, model debugging scenarios, and a detailed walkthrough of an end-to-end ML project.",
+        "skills":    "Core: Python, Linear Algebra, PyTorch or TensorFlow, MLOps tools (Docker, Kubernetes, GitHub Actions), FastAPI for model serving, and cloud AI platforms (AWS SageMaker).",
+        "start":     "Math foundations → Python → ML theory → PyTorch → train your first models → MLOps → deploy a model to a live production endpoint.",
+        "next":      "Master integrating Large Language Models (LLMs) via APIs, fine-tuning open-source models (Llama/Mistral), and building RAG systems. Contribute to Hugging Face or Papers With Code.",
+        "projects":  "Build: 1) A fine-tuned LLM application, 2) A computer vision classifier deployed as a scalable API, 3) A recommender system featuring both offline and online evaluation.",
+        "interview": "Prepare for ML system design questions (e.g., 'How do you scale a recommendation engine?'), Python coding exercises, model debugging scenarios, and MLOps deployment strategies.",
     },
     "web developer": {
         "skills":    "HTML, CSS, JavaScript deeply, then React, Node.js or Express, SQL or MongoDB, REST APIs, TypeScript, Docker, and CI/CD pipelines.",
-        "start":     "Clone a simple website, build your own portfolio, add a backend, connect a database, then deploy. Ship something real within three months.",
-        "next":      "TypeScript, Jest and Cypress for testing, Core Web Vitals optimisation, and cloud fundamentals with AWS or Vercel.",
-        "projects":  "Build: 1) Personal portfolio site, 2) A SaaS landing page with auth, 3) A real-time collaboration tool with WebSockets.",
-        "interview": "Focus on JavaScript fundamentals, React internals, REST API design, and one full-stack project you can discuss in full technical depth.",
+        "start":     "Clone a simple website layout, build your own portfolio, add a backend, connect a database, then deploy. Ship something real and functional within three months.",
+        "next":      "Transition to full-stack frameworks like Next.js. Master TypeScript, write tests with Jest/Cypress, optimise Core Web Vitals, and learn cloud hosting fundamentals (Vercel/AWS).",
+        "projects":  "Build: 1) A highly polished personal portfolio site, 2) A SaaS landing page with Stripe payment integration and auth, 3) A real-time collaboration tool.",
+        "interview": "Focus on JavaScript closures/promises, React lifecycle/hooks under the hood, REST API design principles, and have one full-stack project you can discuss in extreme technical depth.",
     },
     "ux designer": {
-        "skills":    "Figma, UX research methods, information architecture, prototyping, design systems, WCAG accessibility standards, and basic HTML and CSS awareness.",
-        "start":     "Learn design principles, use Figma daily, redesign three popular apps, and document each process as a detailed case study.",
-        "next":      "Go deep on UX research through user interviews and usability testing. Explore motion design with Lottie or Framer. Collaborate on real product teams.",
-        "projects":  "Build: 1) A redesign case study with before/after, 2) A new app concept with a full Figma prototype, 3) A reusable design system component library.",
-        "interview": "Present case studies clearly. Explain every design decision and its rationale. Walk through your complete research and ideation process.",
+        "skills":    "Figma, UX research methodologies, information architecture, rapid prototyping, design systems, WCAG accessibility standards, and basic HTML/CSS awareness.",
+        "start":     "Learn core design principles (Gestalt, typography, spacing), use Figma daily, redesign three popular apps, and document each process as a detailed case study.",
+        "next":      "Go deep on UX research through live user interviews and usability testing. Explore motion design with Lottie or Framer. Learn how to execute perfect developer handoffs.",
+        "projects":  "Build: 1) A redesign case study showing the 'before/after' metrics, 2) A new app concept with a fully interactive Figma prototype, 3) A reusable design system/component library.",
+        "interview": "Present your case studies as compelling stories. Explain the 'why' behind every design decision. Be prepared to walk through your complete user research and ideation process.",
     },
     "product manager": {
-        "skills":    "Product thinking, roadmapping frameworks, SQL, user research, A/B testing, stakeholder communication, and Agile or Scrum methodology.",
-        "start":     "Read Inspired by Marty Cagan, shadow a PM, build a side product, document it as a case study, then apply for Associate PM programmes.",
-        "next":      "Develop a specialisation: growth PM, platform PM, or B2B enterprise PM. Get SQL-proficient. Learn to interpret analytics independently.",
-        "projects":  "Document: 1) A product teardown of an app you use daily, 2) A full PRD for a new feature, 3) A go-to-market strategy and launch plan.",
-        "interview": "Prepare product design, metrics, market estimation, and strategy questions. Use resources like Exponent for structured PM interview practice.",
+        "skills":    "Product sense, roadmapping frameworks (RICE, MoSCoW), SQL for data analysis, user research, A/B testing methodology, stakeholder communication, and Agile/Scrum.",
+        "start":     "Read 'Inspired' by Marty Cagan, shadow an existing PM if possible, build a side product, document it as a case study, then apply for Associate PM (APM) programmes.",
+        "next":      "Develop a clear specialisation: Growth PM, Platform PM, or AI/Data PM. Get highly proficient in SQL. Learn to interpret Mixpanel/Amplitude analytics independently.",
+        "projects":  "Document: 1) A critical product teardown of an app you use daily, 2) A comprehensive PRD (Product Requirements Document) for a new feature, 3) A go-to-market strategy.",
+        "interview": "Prepare for product design ('Design an elevator for the blind'), metrics/execution, market estimation (fermi problems), and strategy questions. Use resources like Exponent.",
     },
     "data analyst": {
-        "skills":    "SQL is essential. Then Excel, Python with Pandas, Tableau or Power BI for dashboards, Statistics for interpretation, and storytelling with data.",
-        "start":     "SQL → Excel → Python basics → Pandas → build your first interactive dashboard in Tableau or Power BI.",
-        "next":      "A/B testing methodology, statistical modelling, Python automation, and telling data stories that directly influence business strategy.",
-        "projects":  "Build: 1) A sales dashboard in Tableau, 2) A full EDA report on a public dataset, 3) An automated Python report delivered via email.",
-        "interview": "Practice SQL joins and aggregations, walk through past analyses, and explain how you converted data insights into concrete business actions.",
+        "skills":    "SQL is absolutely essential. Following that: Advanced Excel, Python (Pandas), Tableau or Power BI for dashboards, Applied Statistics, and business storytelling.",
+        "start":     "SQL syntax → Excel pivot tables → Python basics → Pandas manipulation → build your first interactive dashboard in Tableau or Power BI.",
+        "next":      "Learn A/B testing experiment design, basic statistical modelling, Python task automation, and how to translate raw data into actionable business strategy.",
+        "projects":  "Build: 1) An interactive sales dashboard in Tableau/Power BI, 2) A full Exploratory Data Analysis (EDA) report on a public dataset, 3) An automated Python report delivered via email.",
+        "interview": "Practice complex SQL joins and aggregations daily. Walk through past analyses and, most importantly, explain how your insights drove concrete business actions.",
     },
     "cybersecurity analyst": {
-        "skills":    "Networking fundamentals (TCP/IP, DNS), Linux CLI, Python scripting, Wireshark, Burp Suite for web app testing, and SIEM tools.",
-        "start":     "Networking fundamentals → Linux → Python scripting → OWASP Top 10 → CTF challenges on HackTheBox or TryHackMe.",
-        "next":      "Specialise in penetration testing, threat intelligence, SOC analysis, or cloud security. Pursue CompTIA Security+ as your first major cert.",
-        "projects":  "Complete: 1) The TryHackMe beginner path, 2) A Kali Linux home lab setup, 3) A written vulnerability assessment report for a sample target.",
-        "interview": "Expect networking protocol questions, SQLi and XSS attack mechanics, incident response procedures, and deep dives into your lab work.",
+        "skills":    "Networking fundamentals (TCP/IP, DNS, OSI model), Linux CLI, Python scripting, Wireshark, Burp Suite for web app testing, and SIEM tools (Splunk).",
+        "start":     "Networking fundamentals → Linux administration → Python scripting → OWASP Top 10 vulnerabilities → complete CTF (Capture The Flag) challenges on TryHackMe or HackTheBox.",
+        "next":      "Specialise in penetration testing, threat intelligence, SOC (Security Operations Center) analysis, or cloud security. Pursue the CompTIA Security+ as your foundational certification.",
+        "projects":  "Complete: 1) The TryHackMe beginner/defense paths, 2) Set up a Kali Linux home lab with vulnerable VMs, 3) Write a professional vulnerability assessment report for a sample target.",
+        "interview": "Expect deep networking protocol questions, explanations of SQLi and XSS attack mechanics, incident response frameworks, and technical deep dives into your home lab setup.",
     },
 }
 
@@ -608,18 +676,17 @@ def chatbot_response(user_msg: str, career: str) -> str:
         f"salary expectations, or internship advice. What would you like to explore?"
     )
 
-
 # ═════════════════════════════════════════════════════════════
 # RESUME ANALYZER
 # ═════════════════════════════════════════════════════════════
 RESUME_KEYWORDS: dict[str, list[str]] = {
-    "default":              ["Python", "project", "team", "experience", "skills", "education", "GitHub"],
-    "software developer":   ["Python", "JavaScript", "React", "Node", "API", "SQL", "Docker", "Git", "testing", "deployment", "agile"],
-    "data scientist":       ["Python", "machine learning", "TensorFlow", "PyTorch", "pandas", "scikit", "SQL", "statistics", "model", "Kaggle", "deep learning"],
-    "machine learning engineer": ["PyTorch", "TensorFlow", "MLOps", "model deployment", "Docker", "Kubernetes", "pipeline", "NLP", "computer vision", "MLflow"],
-    "web developer":        ["HTML", "CSS", "JavaScript", "React", "Node", "REST", "API", "responsive", "TypeScript", "deployment", "database"],
+    "default":              ["Python", "project", "team", "experience", "skills", "education", "GitHub", "impact"],
+    "software developer":   ["Python", "JavaScript", "React", "Node", "API", "SQL", "Docker", "Git", "testing", "CI/CD", "agile", "TypeScript"],
+    "data scientist":       ["Python", "machine learning", "TensorFlow", "PyTorch", "pandas", "scikit", "SQL", "statistics", "model", "GenAI", "deep learning"],
+    "machine learning engineer": ["PyTorch", "TensorFlow", "MLOps", "deployment", "Docker", "Kubernetes", "pipeline", "NLP", "LLM", "MLflow"],
+    "web developer":        ["HTML", "CSS", "JavaScript", "React", "Node", "REST", "API", "responsive", "TypeScript", "Next.js", "database"],
     "ux designer":          ["Figma", "user research", "prototype", "wireframe", "usability", "design system", "accessibility", "case study", "UI", "UX"],
-    "product manager":      ["roadmap", "stakeholder", "OKR", "user research", "A/B test", "agile", "sprint", "metrics", "strategy", "product"],
+    "product manager":      ["roadmap", "stakeholder", "OKR", "user research", "A/B test", "agile", "sprint", "metrics", "strategy", "launch"],
     "data analyst":         ["SQL", "Excel", "Tableau", "Power BI", "Python", "dashboard", "KPI", "report", "analysis", "statistics"],
     "cybersecurity analyst":["penetration", "SIEM", "firewall", "vulnerability", "Kali", "network", "incident response", "cryptography", "security", "compliance"],
 }
@@ -637,7 +704,9 @@ def analyze_resume(text: str, career: str) -> dict:
     matched = [k for k in keywords if k.lower() in text_lower]
     missing = [k for k in keywords if k.lower() not in text_lower]
 
-    kw_score   = (len(matched) / max(len(keywords), 1)) * 48
+    # Adjusted to 49 so that max kw_score (49) + max bonus (51) exactly equals 100
+    kw_score   = (len(matched) / max(len(keywords), 1)) * 49
+    
     length_ok  = 180 < len(text.split()) < 750
     has_github  = "github" in text_lower
     has_nums    = bool(re.search(r"\d+\s*%|\d+x|\$[\d,]+|₹[\d,]+|\d+\s*(users|clients|projects)", text, re.I))
@@ -654,6 +723,7 @@ def analyze_resume(text: str, career: str) -> dict:
         has_contact * 4,
         14 if length_ok else 3,
     ])
+    
     score = max(0, min(100, int(kw_score + bonus)))
     grade = "A" if score >= 80 else ("B" if score >= 60 else ("C" if score >= 40 else "D"))
 
@@ -684,7 +754,6 @@ def analyze_resume(text: str, career: str) -> dict:
         "missing_kws": missing,
         "suggestions": suggestions,
     }
-
 
 # ═════════════════════════════════════════════════════════════
 # CAREER ICON MAP
@@ -756,7 +825,7 @@ def load_label_encoder() -> tuple:
 def quiz_to_features(answers: list[int], model) -> pd.DataFrame:
     """
     Convert quiz answers into one model-ready row with the same feature names
-    used during model training (including one-hot internet_access columns).
+    used during model training (including dynamic internet_access columns).
     """
     a = answers
 
@@ -771,6 +840,7 @@ def quiz_to_features(answers: list[int], model) -> pd.DataFrame:
         (1.0 if a[13] == 0 else 0.0) +
         (1.0 if a[14] == 0 else 0.0)
     ) / 5.0
+    
     art_lat = (
         (1.0 if a[1] == 1 else 0.0) +
         (1.0 if a[4] == 1 else 0.0) +
@@ -778,6 +848,7 @@ def quiz_to_features(answers: list[int], model) -> pd.DataFrame:
         (1.0 if a[13] == 1 else 0.0) +
         (1.0 if a[14] == 1 else 0.0)
     ) / 5.0
+    
     biz_lat = (
         (1.0 if a[1] == 2 else 0.0) +
         (1.0 if a[4] == 2 else 0.0) +
@@ -785,6 +856,7 @@ def quiz_to_features(answers: list[int], model) -> pd.DataFrame:
         (1.0 if a[13] == 2 else 0.0) +
         (1.0 if a[14] == 2 else 0.0)
     ) / 5.0
+    
     res_lat = (
         (1.0 if a[1] == 3 else 0.0) +
         (1.0 if a[4] == 3 else 0.0) +
@@ -793,46 +865,51 @@ def quiz_to_features(answers: list[int], model) -> pd.DataFrame:
         (1.0 if a[14] == 3 else 0.0)
     ) / 5.0
 
+    # Base trait mappings from specific questions
     academic_base = [17, 14, 11, 8][a[8]]
-    math_score = [9, 7, 5, 3][a[3]]
+    math_score    = [9, 7, 5, 3][a[3]]
     self_learning = [1.0, 0.8, 0.5, 0.2][a[9]]
     deadline_ctrl = [1.0, 0.8, 0.5, 0.2][a[6]]
 
-    grade1 = clip(round(academic_base + (math_score - 6) * 0.6), 0, 20)
-    grade2 = clip(round(academic_base + (deadline_ctrl - 0.6) * 3), 0, 20)
+    # Feature Calculation
+    grade1      = clip(round(academic_base + (math_score - 6) * 0.6), 0, 20)
+    grade2      = clip(round(academic_base + (deadline_ctrl - 0.6) * 3), 0, 20)
     final_grade = clip(round((grade1 + grade2) / 2 + self_learning * 1.5), 0, 20)
 
     study_time = int(clip(round(1 + self_learning * 3), 1, 4))
-    failures = int(clip(round((20 - final_grade) / 6), 0, 3))
-    absences = int(clip(round(20 - (academic_base * 0.8) + (3 - a[6]) * 2), 0, 30))
+    failures   = int(clip(round((20 - final_grade) / 6), 0, 3))
+    absences   = int(clip(round(20 - (academic_base * 0.8) + (3 - a[6]) * 2), 0, 30))
 
-    openness = clip(0.35 + art_lat * 0.35 + res_lat * 0.2, 0, 1)
+    # Big Five Personality Mapping
+    openness          = clip(0.35 + art_lat * 0.35 + res_lat * 0.2, 0, 1)
     conscientiousness = clip(0.3 + self_learning * 0.4 + deadline_ctrl * 0.3, 0, 1)
-    extraversion = clip(0.2 + (3 - a[5]) * 0.18 + (1 if a[2] == 2 else 0) * 0.15, 0, 1)
-    agreeableness = clip(0.35 + (1 if a[2] in [1, 2] else 0) * 0.25 + (1 if a[12] == 2 else 0) * 0.2, 0, 1)
-    neuroticism = clip(0.2 + (a[6] / 3) * 0.6, 0, 1)
+    extraversion      = clip(0.2 + (3 - a[5]) * 0.18 + (1 if a[2] == 2 else 0) * 0.15, 0, 1)
+    agreeableness     = clip(0.35 + (1 if a[2] in [1, 2] else 0) * 0.25 + (1 if a[12] == 2 else 0) * 0.2, 0, 1)
+    neuroticism       = clip(0.2 + (a[6] / 3) * 0.6, 0, 1)
 
-    coding_skill = int(clip(round(2 + tech_lat * 7), 0, 9))
+    # Skill & Habit Mapping
+    coding_skill        = int(clip(round(2 + tech_lat * 7), 0, 9))
     communication_skill = int(clip(round(2 + (extraversion * 3.5) + (1 if a[2] == 2 else 0) * 2), 0, 9))
-    analytical_skill = int(clip(round(2 + (1 if a[0] == 0 else 0) * 3 + (math_score / 10) * 4), 0, 9))
+    analytical_skill    = int(clip(round(2 + (1 if a[0] == 0 else 0) * 3 + (math_score / 10) * 4), 0, 9))
 
-    study_hours = int(clip(round(3 + self_learning * 6), 1, 10))
-    consistency = clip(0.25 + self_learning * 0.4 + deadline_ctrl * 0.25, 0, 1)
+    study_hours   = int(clip(round(3 + self_learning * 6), 1, 10))
+    consistency   = clip(0.25 + self_learning * 0.4 + deadline_ctrl * 0.25, 0, 1)
     participation = clip(0.2 + (1 if a[2] in [1, 2] else 0) * 0.25 + (extraversion * 0.35), 0, 1)
 
-    tech_interest = int(clip(round(tech_lat * 9), 0, 9))
-    art_interest = int(clip(round(art_lat * 9), 0, 9))
+    tech_interest     = int(clip(round(tech_lat * 9), 0, 9))
+    art_interest      = int(clip(round(art_lat * 9), 0, 9))
     business_interest = int(clip(round(biz_lat * 9), 0, 9))
 
     # Calibration: the training labels default to Research Scientist unless
     # a domain signal crosses specific thresholds. Push dominant intent above
-    # those boundaries so different quiz profiles lead to different careers.
+    # those boundaries so different quiz profiles lead to distinct careers.
     dominant = max(
         [("tech", tech_lat), ("art", art_lat), ("biz", biz_lat), ("res", res_lat)],
         key=lambda x: x[1],
     )[0]
+    
     if dominant == "tech":
-        coding_skill = max(coding_skill, 8)
+        coding_skill  = max(coding_skill, 8)
         tech_interest = max(tech_interest, 8)
     elif dominant == "art":
         art_interest = max(art_interest, 8)
@@ -840,10 +917,10 @@ def quiz_to_features(answers: list[int], model) -> pd.DataFrame:
         business_interest = max(business_interest, 8)
     else:
         analytical_skill = max(analytical_skill, 8)
-        final_grade = max(final_grade, 13)
+        final_grade      = max(final_grade, 13)
 
     family_income = int(clip(round(2 + (0.5 if a[14] in [0, 1] else -0.2)), 1, 4))
-    has_internet = 1 if (self_learning >= 0.5 or a[10] in [0, 1, 2]) else 0
+    has_internet  = 1 if (self_learning >= 0.5 or a[10] in [0, 1, 2]) else 0
 
     base_row = {
         "grade1": grade1,
@@ -869,6 +946,7 @@ def quiz_to_features(answers: list[int], model) -> pd.DataFrame:
         "family_income": family_income,
     }
 
+    # Model Alignment Failsafe
     expected_cols = []
     if model is not None and hasattr(model, "feature_names_in_"):
         expected_cols = [str(c) for c in model.feature_names_in_]
@@ -876,11 +954,13 @@ def quiz_to_features(answers: list[int], model) -> pd.DataFrame:
     if not expected_cols:
         expected_cols = list(base_row.keys()) + ["internet_access_no", "internet_access_yes"]
 
+    # Construct the final row matching model expectations
     row = {col: 0.0 for col in expected_cols}
     for key, val in base_row.items():
         if key in row:
             row[key] = float(val)
 
+    # Dynamic One-Hot Encoding handling
     if "internet_access_yes" in row:
         row["internet_access_yes"] = float(has_internet)
     if "internet_access_no" in row:
@@ -889,8 +969,6 @@ def quiz_to_features(answers: list[int], model) -> pd.DataFrame:
         row["internet_access"] = float(has_internet)
 
     return pd.DataFrame([row], columns=expected_cols)
-
-
 def _decode_career_label(value, label_encoder=None) -> str:
     """Decode model output class into a readable career string."""
     if label_encoder is not None:
@@ -905,6 +983,7 @@ def _decode_career_label(value, label_encoder=None) -> str:
         except Exception:
             pass
 
+    # Fallback map for older model iterations without a label encoder
     fallback_map = {
         0: "data scientist",
         1: "entrepreneur",
@@ -977,7 +1056,6 @@ def generate_explanation(career: str, answers: list[int]) -> str:
         strengths = ["a versatile skill profile", "intellectual adaptability"]
     s = " and ".join(strengths[:2])
     return f"Your {s} position you well for a career in {career.title()} — the role aligns naturally with how you think, work, and grow."
-
 
 # ═════════════════════════════════════════════════════════════
 # RENDER ROADMAP
@@ -1056,7 +1134,7 @@ def render_sidebar() -> None:
   <div style="font-size:12px;color:var(--dim)">Complete the quiz to unlock your prediction.</div>
 </div>""", unsafe_allow_html=True)
 
-        st.markdown('<div class="nav-footer">NextStep AI · v4.0 · Zero APIs</div>',
+        st.markdown('<div class="nav-footer">NextStep AI · v4.0 · Proprietary ML Engine</div>',
                     unsafe_allow_html=True)
 
 
@@ -1068,7 +1146,7 @@ def page_home() -> None:
 <div class="hero">
   <div class="hero-eyebrow">
     <span class="dot"></span>
-    AI-Powered · ML Prediction · Zero External APIs
+    Proprietary ML Engine · 100% Local Inference
   </div>
   <div class="hero-title">
     Discover Your<br><em>Perfect Career</em><br>
@@ -1143,7 +1221,7 @@ def page_quiz(model, label_encoder) -> None:
       <div class="quiz-prog-fill" style="width:{pct}%"></div>
     </div>
   </div>
-  <div class="quiz-step-badge">Question {qi + 1} of {total}</div>
+  <div class="quiz-step-badge">Question {min(qi + 1, total)} of {total}</div>
 </div>""", unsafe_allow_html=True)
 
     # ── All questions answered → predict ──
@@ -1151,7 +1229,7 @@ def page_quiz(model, label_encoder) -> None:
         st.markdown("""
 <div class="card card-pu" style="text-align:center;padding:3rem">
   <div style="font-size:3.5rem;margin-bottom:1rem">🧠</div>
-  <div style="font-family:var(--serif);font-size:1.8rem;color:var(--snow);margin-bottom:.5rem">Assessment Complete</div>
+  <div style="font-family:var(--display);font-size:1.8rem;font-weight:700;color:var(--snow);margin-bottom:.5rem">Assessment Complete</div>
   <div style="font-size:14px;color:var(--muted)">Analysing your cognitive profile with NextStep AI…</div>
 </div>""", unsafe_allow_html=True)
 
@@ -1195,7 +1273,7 @@ def page_quiz(model, label_encoder) -> None:
         with lc:
             st.markdown(
                 f'<div style="margin-top:9px;font-family:var(--mono);font-size:11px;'
-                f'color:var(--purple2);padding:6px 0;font-weight:600">{labels[oi]}</div>',
+                f'color:var(--cyan);padding:6px 0;font-weight:600">{labels[oi]}</div>',
                 unsafe_allow_html=True,
             )
         with bc:
@@ -1221,7 +1299,7 @@ def page_results() -> None:
         st.markdown("""
 <div class="card" style="text-align:center;padding:3.5rem">
   <div style="font-size:3.5rem;margin-bottom:1.2rem">📝</div>
-  <div style="font-family:var(--serif);font-size:1.6rem;color:var(--snow);margin-bottom:.5rem">No Results Yet</div>
+  <div style="font-family:var(--display);font-weight:700;font-size:1.8rem;color:var(--snow);margin-bottom:.5rem">No Results Yet</div>
   <div style="font-size:14px;color:var(--muted)">Complete the Neural Assessment to see your AI career projection.</div>
 </div>""", unsafe_allow_html=True)
         if st.button("Take the Assessment →"):
@@ -1255,7 +1333,7 @@ def page_results() -> None:
         r     = 52
         circ  = 2 * 3.14159 * r
         dash  = (conf / 100) * circ
-        ring_color = ("#10B981" if conf >= 70 else ("#F59E0B" if conf >= 45 else "#F43F5E"))
+        ring_color = ("var(--green)" if conf >= 70 else ("var(--amber)" if conf >= 45 else "var(--rose)"))
         st.markdown(f"""
 <div class="conf-wrap">
   <div class="conf-outer">
@@ -1342,7 +1420,7 @@ def page_resume() -> None:
     career = st.session_state.get("career", "default")
     st.markdown(
         f'<div class="s-sub">Keyword analysis optimised for '
-        f'<strong style="color:var(--purple2)">{career.title()}</strong>. '
+        f'<strong style="color:var(--cyan)">{career.title()}</strong>. '
         f'Paste your plain-text resume below — not a PDF.</div>',
         unsafe_allow_html=True,
     )
@@ -1370,20 +1448,22 @@ def page_resume() -> None:
 
         score = result["score"]
         grade = result["grade"]
-        grade_color = {"A": "var(--green)", "B": "var(--blue2)", "C": "var(--amber)", "D": "var(--rose)"}.get(grade, "var(--purple2)")
-        grade_bg    = {"A": "rgba(16,185,129,0.11)", "B": "rgba(59,130,246,0.11)", "C": "rgba(245,158,11,0.11)", "D": "rgba(244,63,94,0.11)"}.get(grade, "rgba(139,92,246,0.11)")
-        grade_bd    = {"A": "rgba(16,185,129,0.28)", "B": "rgba(59,130,246,0.28)", "C": "rgba(245,158,11,0.28)", "D": "rgba(244,63,94,0.28)"}.get(grade, "rgba(139,92,246,0.28)")
+        
+        # Mapping to the new Neon CSS Variables
+        grade_color = {"A": "var(--green)", "B": "var(--cyan)", "C": "var(--amber)", "D": "var(--rose)"}.get(grade, "var(--purple)")
+        grade_bg    = {"A": "rgba(0,255,102,0.11)", "B": "rgba(0,240,255,0.11)", "C": "rgba(255,176,0,0.11)", "D": "rgba(255,0,85,0.11)"}.get(grade, "rgba(138,43,226,0.11)")
+        grade_bd    = {"A": "rgba(0,255,102,0.28)", "B": "rgba(0,240,255,0.28)", "C": "rgba(255,176,0,0.28)", "D": "rgba(255,0,85,0.28)"}.get(grade, "rgba(138,43,226,0.28)")
 
         cs, ck = st.columns([1, 2])
         with cs:
             st.markdown(f"""
 <div class="card" style="text-align:center;padding:2rem">
-  <div style="font-family:var(--mono);font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:1rem">Neural Resume Score</div>
-  <div style="font-family:var(--serif);font-size:5rem;color:{grade_color};line-height:1">{score}</div>
-  <div style="font-family:var(--mono);font-size:1rem;color:var(--muted);margin-top:.3rem">/ 100</div>
-  <div style="margin-top:1rem;display:inline-block;padding:6px 18px;border-radius:100px;
+  <div style="font-family:var(--mono);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:1rem">Neural Resume Score</div>
+  <div style="font-family:var(--display);font-size:5.5rem;font-weight:700;color:{grade_color};line-height:1;text-shadow:0 0 20px {grade_color}">{score}</div>
+  <div style="font-family:var(--mono);font-size:1rem;color:var(--muted);margin-top:.5rem">/ 100</div>
+  <div style="margin-top:1.5rem;display:inline-block;padding:6px 18px;border-radius:100px;
               background:{grade_bg};border:1px solid {grade_bd};
-              font-family:var(--mono);font-size:13px;color:{grade_color}">Grade {grade}</div>
+              font-family:var(--mono);font-size:13px;font-weight:600;color:{grade_color};box-shadow:0 0 10px {grade_bg}">Grade {grade}</div>
 </div>""", unsafe_allow_html=True)
 
         with ck:
@@ -1393,22 +1473,22 @@ def page_resume() -> None:
             nh = "".join(f'<span class="kw-missing">{k}</span>' for k in missing[:7])
             st.markdown(f"""
 <div class="card">
-  <div style="margin-bottom:1.2rem">
-    <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--green);margin-bottom:.7rem">✓ Keywords Found ({len(matched)})</div>
+  <div style="margin-bottom:1.5rem">
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--green);margin-bottom:.8rem;text-shadow:0 0 8px rgba(0,255,102,0.3)">✓ Keywords Found ({len(matched)})</div>
     <div>{mh if mh else '<span style="color:var(--dim);font-size:13px">None detected</span>'}</div>
   </div>
   <div>
-    <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--rose);margin-bottom:.7rem">✗ Keywords Missing ({len(missing)})</div>
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--rose);margin-bottom:.8rem;text-shadow:0 0 8px rgba(255,0,85,0.3)">✗ Keywords Missing ({len(missing)})</div>
     <div>{nh if nh else '<span style="color:var(--dim);font-size:13px">All key terms present!</span>'}</div>
   </div>
 </div>""", unsafe_allow_html=True)
 
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown('<div class="s-eye" style="margin-bottom:1rem">Improvement Suggestions</div>',
+        st.markdown('<div class="s-eye" style="margin-bottom:1.5rem">Improvement Suggestions</div>',
                     unsafe_allow_html=True)
         for icon, tip in result["suggestions"]:
             st.markdown(
-                f'<div class="sug-row"><span style="flex-shrink:0;font-size:15px">{icon}</span>'
+                f'<div class="sug-row"><span style="flex-shrink:0;font-size:16px">{icon}</span>'
                 f'<span>{tip}</span></div>',
                 unsafe_allow_html=True,
             )
@@ -1425,7 +1505,7 @@ def page_chat() -> None:
     st.markdown('<div class="s-title">NextStep AI Career Mentor</div>', unsafe_allow_html=True)
     st.markdown(
         f'<div class="s-sub">Your mentor is calibrated to '
-        f'<strong style="color:var(--purple2)">'
+        f'<strong style="color:var(--cyan)">'
         f'{career.title() if career else "general career guidance"}'
         f'</strong>. Ask about skills, projects, interviews, or salary.</div>',
         unsafe_allow_html=True,
@@ -1542,7 +1622,7 @@ def main() -> None:
     st.markdown("""
 <div class="footer">
   NextStep AI · Your Smart Career Guide to the Next Step<br>
-  <span style="opacity:.45">Built with ❤️ using Machine Learning &amp; Streamlit · Zero External APIs</span>
+  <span style="opacity:.45">Built with ❤️ using Machine Learning &amp; Streamlit · Powered by Custom Predictive Models</span>
 </div>""", unsafe_allow_html=True)
 
 

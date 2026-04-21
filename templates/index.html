@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NextStep AI Predictor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #05070F;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --purple: #8B5CF6;
+            --cyan: #22D3EE;
+            --text-main: #FFFFFF;
+            --text-muted: #9CA3AF;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(34, 211, 238, 0.1), transparent 25%);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            height: 85vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .header {
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header h1 {
+            font-family: 'Manrope', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .form-container {
+            padding: 2rem;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        /* Custom Scrollbar */
+        .form-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .form-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .form-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+        .form-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+        }
+
+        .form-group h2 {
+            font-family: 'Manrope', sans-serif;
+            font-size: 1.25rem;
+            color: var(--cyan);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .input-box {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        input, select {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--purple);
+            background: rgba(139, 92, 246, 0.1);
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
+        }
+
+        option {
+            background: var(--bg);
+            color: var(--text-main);
+        }
+
+        .footer {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        button {
+            background: linear-gradient(135deg, var(--purple), var(--cyan));
+            color: white;
+            border: none;
+            padding: 1rem 2.5rem;
+            border-radius: 12px;
+            font-family: 'Manrope', sans-serif;
+            font-weight: 800;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(34, 211, 238, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result-box {
+            display: none;
+            flex-grow: 1;
+            align-items: center;
+            padding-right: 1.5rem;
+        }
+
+        .result-text {
+            font-family: 'Manrope', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--cyan);
+            margin-left: 1rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: none;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>NextStep AI</h1>
+            <p>Enter your profile details to predict your optimal career trajectory.</p>
+        </div>
+
+        <div class="form-container" id="formScroll">
+            <form id="predictionForm">
+                
+                <div class="form-group">
+                    <h2>Academic Performance</h2>
+                    <div class="grid">
+                        <div class="input-box">
+                            <label>Grade 1</label>
+                            <input type="number" id="grade1" value="85" required>
+                        </div>
+                        <div class="input-box">
+                            <label>Grade 2</label>
+                            <input type="number" id="grade2" value="88" required>
+                        </div>
+                        <div class="input-box">
+                            <label>Final Grade</label>
+                            <input type="number" id="final_grade" value="87" required>
+                        </div>
+                        <div class="input-box">
+                            <label>Study Time (hrs/week)</label>
+                            <input type="number" id="study_time" value="15" required>
+                        </div>
+                        <div class="input-box">
+                            <label>Failures</label>
+                            <input type="number" id="failures" value="0" required>
+                        </div>
+                        <div class="input-box">
+                            <label>Absences</label>
+                            <input type="number" id="absences" value="2" required>
+                        </div>
+                        <div class="input-box">
+                            <label>Study Hours</label>
+                            <input type="number" id="study_hours" value="12" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <h2>Personality Traits</h2>
+                    <div class="grid">
+                        <div class="input-box">
+                            <label>Openness (1-10)</label>
+                            <input type="number" id="openness" value="8" required>
+                        </div>
+                        <div class="input-box">
+                            <label>Conscientiousness (1-10)</label>
+                            <input type="number" id="conscientiousness" value="7" required>
+                        </div>
+                        <div class="input-box">
+                            <label>Extraversion (1-10)</label>
+                            <input type="number" id="extraversion" value="6" required>
+                        </div>
+                        <div class="input-box">
+                            <label>Agreeableness (1-10)</label>
+                            <input type="number" id="agreeableness" value="8" required>
+                        </div>
+                        <div class="input-box">
+                            <label>Neuroticism (1-10)</label>
+                            <input type="number" id="neuroticism" value="4" required>
+                        </div>
+                        <div class="input-box">
+                            <label>Consistency (1-10)</label>
+                            <input type="number" id="consistency" value="8" required>
+                        </div>
+                        <div class="input-box">
+                            <label>Participation (1-10)</label>
+                            <input type="number" id="participation" value="7" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <h2>Skills & Interests</h2>
+                    <div class="grid">
+                        <div class="input-box">
+                            <label>Coding Skill (1-10)</label>
+                            <input type="number" id="coding_skill" value="8" required>
+                        </div>
+                        <div class="input-box">
+                            <label>Communication Skill (1-10)</label>
+                            <input type="number" id="communication_skill" value="7" required>
+                        </div>
+                        <div class="input-box">
+                            <label>Analytical Skill (1-10)</label>
+                            <input type="number" id="analytical_skill" value="9" required>
+                        </div>
+                        <div class="input-box">
+                            <label>Tech Interest (1-10)</label>
+                            <input type="number" id="tech_interest" value="9" required>
+                        </div>
+                        <div class="input-box">
+                            <label>Art Interest (1-10)</label>
+                            <input type="number" id="art_interest" value="3" required>
+                        </div>
+                        <div class="input-box">
+                            <label>Business Interest (1-10)</label>
+                            <input type="number" id="business_interest" value="5" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <h2>Demographics</h2>
+                    <div class="grid">
+                        <div class="input-box">
+                            <label>Family Income (USD)</label>
+                            <input type="number" id="family_income" value="50000" required>
+                        </div>
+                        <div class="input-box">
+                            <label>Internet Access</label>
+                            <select id="internet_access">
+                                <option value="yes">Yes</option>
+                                <option value="no">No</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+
+        <div class="footer">
+            <div class="result-box" id="resultBox">
+                <span style="color: var(--text-muted);">Predicted Career:</span>
+                <span class="result-text" id="resultText"></span>
+            </div>
+            <div class="spinner" id="spinner"></div>
+            <button type="button" id="predictBtn">Predict NextStep</button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('predictBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('predictBtn');
+            const spinner = document.getElementById('spinner');
+            const resultBox = document.getElementById('resultBox');
+            const resultText = document.getElementById('resultText');
+
+            const payload = {
+                grade1: document.getElementById('grade1').value,
+                grade2: document.getElementById('grade2').value,
+                final_grade: document.getElementById('final_grade').value,
+                study_time: document.getElementById('study_time').value,
+                failures: document.getElementById('failures').value,
+                absences: document.getElementById('absences').value,
+                openness: document.getElementById('openness').value,
+                conscientiousness: document.getElementById('conscientiousness').value,
+                extraversion: document.getElementById('extraversion').value,
+                agreeableness: document.getElementById('agreeableness').value,
+                neuroticism: document.getElementById('neuroticism').value,
+                coding_skill: document.getElementById('coding_skill').value,
+                communication_skill: document.getElementById('communication_skill').value,
+                analytical_skill: document.getElementById('analytical_skill').value,
+                study_hours: document.getElementById('study_hours').value,
+                consistency: document.getElementById('consistency').value,
+                participation: document.getElementById('participation').value,
+                tech_interest: document.getElementById('tech_interest').value,
+                art_interest: document.getElementById('art_interest').value,
+                business_interest: document.getElementById('business_interest').value,
+                family_income: document.getElementById('family_income').value,
+                internet_access: document.getElementById('internet_access').value,
+            };
+
+            btn.style.display = 'none';
+            spinner.style.display = 'block';
+            resultBox.style.display = 'none';
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    resultText.textContent = data.career.replace(/['"]+/g, '');
+                    resultBox.style.display = 'flex';
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                alert('Prediction failed: ' + error.message);
+            } finally {
+                btn.style.display = 'block';
+                spinner.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
