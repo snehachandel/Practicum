@@ -9,15 +9,16 @@ app = Flask(__name__)
 # Attempt to load the model on startup globally
 try:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    model_path = os.path.join(BASE_DIR, 'career_model.pkl')
+    ARTIFACTS_DIR = os.path.join(BASE_DIR, '..', 'artifacts')
+    model_path = os.path.join(ARTIFACTS_DIR, 'career_model.pkl')
     if not os.path.exists(model_path):
-        model_path = os.path.join(BASE_DIR, 'model.pkl')
+        model_path = os.path.join(ARTIFACTS_DIR, 'model.pkl')
         
     with open(model_path, 'rb') as f:
         model = pickle.load(f)
     print(f"Model loaded successfully from {model_path}.")
 except FileNotFoundError:
-    print("WARNING: 'model.pkl' or 'career_model.pkl' not found in the root directory.", file=sys.stderr)
+    print("WARNING: 'career_model.pkl' not found in the artifacts/ directory.", file=sys.stderr)
     model = None
 except Exception as e:
     print(f"WARNING: An error occurred while loading the model: {e}", file=sys.stderr)

@@ -790,12 +790,12 @@ def career_icon(career: str) -> str:
 @st.cache_resource(show_spinner=False)
 def load_model() -> tuple:
     """
-    Safely load career_model.pkl from the same directory as app.py.
+    Safely load career_model.pkl from the artifacts directory.
     Returns (model, error_string_or_None).
     """
-    path = os.path.join(BASE_DIR, "career_model.pkl")
+    path = os.path.join(BASE_DIR, "artifacts", "career_model.pkl")
     if not os.path.exists(path):
-        return None, "career_model.pkl not found — place it in the same folder as app.py"
+        return None, "career_model.pkl not found — place it in the artifacts/ folder"
     try:
         with open(path, "rb") as f:
             return pickle.load(f), None
@@ -806,12 +806,12 @@ def load_model() -> tuple:
 @st.cache_resource(show_spinner=False)
 def load_label_encoder() -> tuple:
     """
-    Safely load label_encoder.pkl from the same directory as app.py.
+    Safely load label_encoder.pkl from the artifacts directory.
     Returns (label_encoder, error_string_or_None).
     """
-    path = os.path.join(BASE_DIR, "label_encoder.pkl")
+    path = os.path.join(BASE_DIR, "artifacts", "label_encoder.pkl")
     if not os.path.exists(path):
-        return None, "label_encoder.pkl not found — class labels may appear as numbers"
+        return None, "label_encoder.pkl not found — place it in the artifacts/ folder"
     try:
         with open(path, "rb") as f:
             return pickle.load(f), None
@@ -946,13 +946,18 @@ def quiz_to_features(answers: list[int], model) -> pd.DataFrame:
         "family_income": family_income,
     }
 
-    # Model Alignment Failsafe
+    # Model Alignment Failsafe — supports both sklearn (feature_names_in_)
+    # and LightGBM (feature_name_) attribute conventions.
     expected_cols = []
-    if model is not None and hasattr(model, "feature_names_in_"):
-        expected_cols = [str(c) for c in model.feature_names_in_]
+    if model is not None:
+        if hasattr(model, "feature_names_in_"):
+            expected_cols = [str(c) for c in model.feature_names_in_]
+        elif hasattr(model, "feature_name_"):
+            expected_cols = [str(c) for c in model.feature_name_]
 
     if not expected_cols:
-        expected_cols = list(base_row.keys()) + ["internet_access_no", "internet_access_yes"]
+        # Default: 22 features matching LightGBM Model 4 training format
+        expected_cols = list(base_row.keys()) + ["internet_access"]
 
     # Construct the final row matching model expectations
     row = {col: 0.0 for col in expected_cols}

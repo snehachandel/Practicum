@@ -1,3 +1,17 @@
-*.csv
+# Virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Large data files
+data/*.csv
+
+# Archives & media
 *.zip
 *.mp4
+
+# OS files
+.DS_Store
+Thumbs.db
