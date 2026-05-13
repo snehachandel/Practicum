@@ -15,7 +15,7 @@ def main():
     print("Loading dataset...")
     # Make dataset path relative to the script location
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    dataset_path = os.path.join(script_dir, 'final_career_dataset.csv')
+    dataset_path = os.path.join(script_dir, '..', 'data', 'final_career_dataset.csv')
     df = pd.read_csv(dataset_path)
 
     # --- INJECT REALISM (NOISE) ---
@@ -167,7 +167,7 @@ def main():
     plt.ylabel('AUC Score (Macro)')
     plt.grid(True)
     
-    plot_filename = os.path.join(script_dir, 'optuna_optimization_history.png')
+    plot_filename = os.path.join(script_dir, '..', 'charts', 'optuna_optimization_history.png')
     plt.savefig(plot_filename)
     print(f"Plot saved as {plot_filename}")
 

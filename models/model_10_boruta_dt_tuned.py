@@ -2,28 +2,28 @@ import pandas as pd
 import numpy as np
 import os
 import optuna
-import shap
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from imblearn.over_sampling import SMOTE
-import lightgbm as lgb
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
+from boruta import BorutaPy
 
 def main():
-    print("=== MODEL 6: SHAP + Feature Selection + Decision Tree + Tune ===")
+    print("=== MODEL 10: Boruta Feature Selection + Decision Tree + Tune ===")
     
     # 1. Load Data
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    dataset_path = os.path.join(script_dir, 'final_career_dataset.csv')
+    dataset_path = os.path.join(script_dir, '..', 'data', 'final_career_dataset.csv')
     df = pd.read_csv(dataset_path)
 
-    # 2. Inject 10% Noise
+    # 2. Inject 10% Noise for generalizability
     np.random.seed(42)
     noise_indices = np.random.choice(df.index, size=int(len(df) * 0.10), replace=False)
     df.loc[noise_indices, 'career'] = np.random.choice(df['career'].unique(), size=len(noise_indices))
 
-    # 3. Preprocess
+    # 3. Preprocess categorical features and encode labels
     if 'internet_access' in df.columns:
         df['internet_access'] = df['internet_access'].map({'yes': 1, 'no': 0})
     le = LabelEncoder()
@@ -32,39 +32,40 @@ def main():
     X = df.drop('career', axis=1)
     y = df['career']
 
-    # 4. Train-Test Split
+    # 4. Train-Test Split (stratified)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
-    # 5. Apply SMOTE
+    # 5. Apply SMOTE to handle class imbalance
     smote = SMOTE(random_state=42)
     X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
 
-    # 6. SHAP Feature Selection (Using LGBM as explainer)
-    print("Running SHAP Feature Selection...")
-    baseline_model = lgb.LGBMClassifier(random_state=42, n_jobs=-1, verbose=-1)
-    baseline_model.fit(X_train_res, y_train_res)
-
-    explainer = shap.TreeExplainer(baseline_model)
-    shap_sample = X_train_res.sample(n=min(1000, len(X_train_res)), random_state=42)
-    shap_values = explainer.shap_values(shap_sample)
+    # 6. Boruta Feature Selection
+    print("Running Boruta Feature Selection...")
+    # Define a random forest estimator required by Boruta
+    rf = RandomForestClassifier(n_jobs=-1, class_weight='balanced', max_depth=5, random_state=42)
     
-    if isinstance(shap_values, list):
-        mean_abs_shap = np.mean([np.abs(sv).mean(axis=0) for sv in shap_values], axis=0)
-    elif len(shap_values.shape) == 3:
-        mean_abs_shap = np.abs(shap_values).mean(axis=(0, 2))
-    else:
-        mean_abs_shap = np.abs(shap_values).mean(axis=0)
+    # Define Boruta feature selection method
+    boruta_selector = BorutaPy(rf, n_estimators='auto', verbose=0, random_state=42, max_iter=50)
+    
+    # Fit Boruta (it needs numpy arrays)
+    boruta_selector.fit(X_train_res.values, y_train_res.values)
+    
+    # Check selected features
+    selected_features = X.columns[boruta_selector.support_].tolist()
+    
+    # If Boruta is too strict and selects very few/no features, include tentative ones or fallback
+    if len(selected_features) < 5:
+        print("Boruta selected very few features. Including tentative features as well.")
+        selected_features = X.columns[boruta_selector.support_ | boruta_selector.support_weak_].tolist()
+    
+    print(f"Selected Features by Boruta ({len(selected_features)}): {selected_features}")
 
-    top_n = 15
-    top_indices = np.argsort(mean_abs_shap)[::-1][:top_n]
-    selected_features = X.columns[top_indices].tolist()
-    print(f"Selected Top {top_n} Features: {selected_features}")
-
+    # Reduce dataset to selected features
     X_train_selected = X_train_res[selected_features]
     X_test_selected = X_test[selected_features]
 
     # 7. Optuna Tuning for Decision Tree on selected features
-    print("Tuning Decision Tree using Optuna on SHAP selected features...")
+    print("Tuning Decision Tree using Optuna on Boruta selected features...")
     def objective(trial):
         params = {
             'max_depth': trial.suggest_int('max_depth', 3, 20),
@@ -78,6 +79,7 @@ def main():
         preds = dt.predict_proba(X_test_selected)
         return roc_auc_score(y_test, preds, multi_class='ovo', average='macro')
 
+    # Suppress optuna logging for cleaner output
     optuna.logging.set_verbosity(optuna.logging.WARNING)
     study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=40)

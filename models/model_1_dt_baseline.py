@@ -5,14 +5,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from imblearn.over_sampling import SMOTE
-import lightgbm as lgb
+from sklearn.tree import DecisionTreeClassifier
 
 def main():
-    print("=== MODEL 2: LightGBM (No SHAP, No Tuning) ===")
+    print("=== MODEL 1: Decision Tree (No SHAP, No Tuning) ===")
     
     # 1. Load Data
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    dataset_path = os.path.join(script_dir, 'final_career_dataset.csv')
+    dataset_path = os.path.join(script_dir, '..', 'data', 'final_career_dataset.csv')
     df = pd.read_csv(dataset_path)
 
     # 2. Inject 10% Noise for Realistic Results
@@ -36,9 +36,9 @@ def main():
     smote = SMOTE(random_state=42)
     X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
 
-    # 6. Train Standard LightGBM (using all features)
-    print("Training standard LightGBM on ALL features...")
-    model = lgb.LGBMClassifier(random_state=42, n_jobs=-1, verbose=-1)
+    # 6. Train Standard Decision Tree (using all features)
+    print("Training standard Decision Tree on ALL features...")
+    model = DecisionTreeClassifier(random_state=42)
     model.fit(X_train_res, y_train_res)
 
     # 7. Evaluate Model

@@ -18,7 +18,7 @@ def main():
     optuna.logging.set_verbosity(optuna.logging.WARNING)
     # 1. Load Data
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    dataset_path = os.path.join(script_dir, 'final_career_dataset.csv')
+    dataset_path = os.path.join(script_dir, '..', 'data', 'final_career_dataset.csv')
     df = pd.read_csv(dataset_path)
 
     # 2. Inject 10% Noise
@@ -291,7 +291,7 @@ def main():
         'M9: MI+DT Tuned', 'M10: Boruta+DT Tuned'
     ]
     res_df = res_df.reindex(ordered_index)
-    res_df.to_csv(os.path.join(script_dir, 'comparative_analysis_results.csv'))
+    res_df.to_csv(os.path.join(script_dir, '..', 'charts', 'comparative_analysis_results.csv'))
     print(res_df)
 
     # Plot
@@ -305,7 +305,7 @@ def main():
     for p in ax.patches:
         ax.annotate(f"{p.get_height():.2f}", (p.get_x() * 1.002, p.get_height() * 1.015), fontsize=8)
     plt.tight_layout()
-    plt.savefig(os.path.join(script_dir, '10_models_comparison.png'))
+    plt.savefig(os.path.join(script_dir, '..', 'charts', '10_models_comparison.png'))
     print("Saved 10_models_comparison.png")
 
 if __name__ == '__main__':

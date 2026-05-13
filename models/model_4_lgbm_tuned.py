@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import os
 import optuna
-import shap
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
@@ -10,11 +9,11 @@ from imblearn.over_sampling import SMOTE
 import lightgbm as lgb
 
 def main():
-    print("=== MODEL 5: SHAP + Feature Selection + LightGBM + Tune ===")
+    print("=== MODEL 4: LightGBM (Tuned via Optuna, No SHAP) ===")
     
     # 1. Load Data
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    dataset_path = os.path.join(script_dir, 'final_career_dataset.csv')
+    dataset_path = os.path.join(script_dir, '..', 'data', 'final_career_dataset.csv')
     df = pd.read_csv(dataset_path)
 
     # 2. Inject 10% Noise
@@ -38,32 +37,8 @@ def main():
     smote = SMOTE(random_state=42)
     X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
 
-    # 6. SHAP Feature Selection
-    print("Running SHAP Feature Selection...")
-    baseline_model = lgb.LGBMClassifier(random_state=42, n_jobs=-1, verbose=-1)
-    baseline_model.fit(X_train_res, y_train_res)
-
-    explainer = shap.TreeExplainer(baseline_model)
-    shap_sample = X_train_res.sample(n=min(1000, len(X_train_res)), random_state=42)
-    shap_values = explainer.shap_values(shap_sample)
-    
-    if isinstance(shap_values, list):
-        mean_abs_shap = np.mean([np.abs(sv).mean(axis=0) for sv in shap_values], axis=0)
-    elif len(shap_values.shape) == 3:
-        mean_abs_shap = np.abs(shap_values).mean(axis=(0, 2))
-    else:
-        mean_abs_shap = np.abs(shap_values).mean(axis=0)
-
-    top_n = 15
-    top_indices = np.argsort(mean_abs_shap)[::-1][:top_n]
-    selected_features = X.columns[top_indices].tolist()
-    print(f"Selected Top {top_n} Features: {selected_features}")
-
-    X_train_selected = X_train_res[selected_features]
-    X_test_selected = X_test[selected_features]
-
-    # 7. Optuna Tuning for LightGBM on selected features
-    print("Tuning LightGBM using Optuna on SHAP selected features...")
+    # 6. Optuna Tuning for LightGBM
+    print("Tuning LightGBM using Optuna on ALL features...")
     def objective(trial):
         params = {
             'objective': 'multiclass',
@@ -81,8 +56,8 @@ def main():
             'n_jobs': -1
         }
         model = lgb.LGBMClassifier(**params)
-        model.fit(X_train_selected, y_train_res)
-        preds = model.predict_proba(X_test_selected)
+        model.fit(X_train_res, y_train_res)
+        preds = model.predict_proba(X_test)
         return roc_auc_score(y_test, preds, multi_class='ovo', average='macro')
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -93,15 +68,15 @@ def main():
     for k, v in study.best_params.items():
         print(f"  {k}: {v}")
 
-    # 8. Train Final Tuned Model
+    # 7. Train Final Tuned Model
     best_params = study.best_params
     best_params.update({'objective': 'multiclass', 'num_class': len(np.unique(y)), 'random_state': 42, 'verbose': -1, 'n_jobs': -1})
     final_model = lgb.LGBMClassifier(**best_params)
-    final_model.fit(X_train_selected, y_train_res)
+    final_model.fit(X_train_res, y_train_res)
 
-    # 9. Evaluate Model
-    y_pred = final_model.predict(X_test_selected)
-    y_pred_proba = final_model.predict_proba(X_test_selected)
+    # 8. Evaluate Model
+    y_pred = final_model.predict(X_test)
+    y_pred_proba = final_model.predict_proba(X_test)
 
     print("\n--- Final Performance ---")
     print(f"Accuracy : {accuracy_score(y_test, y_pred):.4f}")

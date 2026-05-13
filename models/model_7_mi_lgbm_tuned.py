@@ -6,15 +6,15 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from imblearn.over_sampling import SMOTE
-from sklearn.tree import DecisionTreeClassifier
+import lightgbm as lgb
 from sklearn.feature_selection import mutual_info_classif, SelectKBest
 
 def main():
-    print("=== MODEL 9: Mutual Information + Feature Selection + Decision Tree + Tune ===")
+    print("=== MODEL 7: Mutual Information + Feature Selection + LightGBM + Tune ===")
     
     # 1. Load Data
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    dataset_path = os.path.join(script_dir, 'final_career_dataset.csv')
+    dataset_path = os.path.join(script_dir, '..', 'data', 'final_career_dataset.csv')
     df = pd.read_csv(dataset_path)
 
     # 2. Inject 10% Noise for generalizability
@@ -40,7 +40,7 @@ def main():
 
     # 6. Mutual Information Feature Selection
     print("Running Mutual Information Feature Selection...")
-    # Select the top 15 features based on mutual information
+    # Select the top 15 features based on mutual information with the target
     mi_selector = SelectKBest(mutual_info_classif, k=15)
     mi_selector.fit(X_train_res, y_train_res)
     
@@ -53,19 +53,27 @@ def main():
     X_train_selected = X_train_res[selected_features]
     X_test_selected = X_test[selected_features]
 
-    # 7. Optuna Tuning for Decision Tree on selected features
-    print("Tuning Decision Tree using Optuna on MI selected features...")
+    # 7. Optuna Tuning for LightGBM on selected features
+    print("Tuning LightGBM using Optuna on MI selected features...")
     def objective(trial):
         params = {
-            'max_depth': trial.suggest_int('max_depth', 3, 20),
-            'min_samples_split': trial.suggest_int('min_samples_split', 2, 20),
-            'min_samples_leaf': trial.suggest_int('min_samples_leaf', 1, 20),
-            'criterion': trial.suggest_categorical('criterion', ['gini', 'entropy']),
-            'random_state': 42
+            'objective': 'multiclass',
+            'metric': 'multi_logloss',
+            'num_class': len(np.unique(y)),
+            'learning_rate': trial.suggest_float('learning_rate', 1e-3, 0.1, log=True),
+            'num_leaves': trial.suggest_int('num_leaves', 20, 100),
+            'max_depth': trial.suggest_int('max_depth', 3, 15),
+            'min_child_samples': trial.suggest_int('min_child_samples', 10, 100),
+            'subsample': trial.suggest_float('subsample', 0.5, 1.0),
+            'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1.0),
+            'n_estimators': trial.suggest_int('n_estimators', 50, 300),
+            'random_state': 42,
+            'verbose': -1,
+            'n_jobs': -1
         }
-        dt = DecisionTreeClassifier(**params)
-        dt.fit(X_train_selected, y_train_res)
-        preds = dt.predict_proba(X_test_selected)
+        model = lgb.LGBMClassifier(**params)
+        model.fit(X_train_selected, y_train_res)
+        preds = model.predict_proba(X_test_selected)
         return roc_auc_score(y_test, preds, multi_class='ovo', average='macro')
 
     # Suppress optuna logging for cleaner output
@@ -79,8 +87,8 @@ def main():
 
     # 8. Train Final Tuned Model
     best_params = study.best_params
-    best_params['random_state'] = 42
-    final_model = DecisionTreeClassifier(**best_params)
+    best_params.update({'objective': 'multiclass', 'num_class': len(np.unique(y)), 'random_state': 42, 'verbose': -1, 'n_jobs': -1})
+    final_model = lgb.LGBMClassifier(**best_params)
     final_model.fit(X_train_selected, y_train_res)
 
     # 9. Evaluate Model

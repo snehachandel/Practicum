@@ -37,7 +37,7 @@ def main():
     fig.tight_layout()
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    plot_path = os.path.join(script_dir, 'model_comparison_bar_chart.png')
+    plot_path = os.path.join(script_dir, '..', 'charts', 'model_comparison_bar_chart.png')
     plt.savefig(plot_path)
     print(f"Plot saved to {plot_path}")
 

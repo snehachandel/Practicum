@@ -790,12 +790,12 @@ def career_icon(career: str) -> str:
 @st.cache_resource(show_spinner=False)
 def load_model() -> tuple:
     """
-    Safely load career_model.pkl from the same directory as app.py.
+    Safely load career_model.pkl from the artifacts directory.
     Returns (model, error_string_or_None).
     """
-    path = os.path.join(BASE_DIR, "career_model.pkl")
+    path = os.path.join(BASE_DIR, "artifacts", "career_model.pkl")
     if not os.path.exists(path):
-        return None, "career_model.pkl not found — place it in the same folder as app.py"
+        return None, "career_model.pkl not found — place it in the artifacts/ folder"
     try:
         with open(path, "rb") as f:
             return pickle.load(f), None
@@ -806,12 +806,12 @@ def load_model() -> tuple:
 @st.cache_resource(show_spinner=False)
 def load_label_encoder() -> tuple:
     """
-    Safely load label_encoder.pkl from the same directory as app.py.
+    Safely load label_encoder.pkl from the artifacts directory.
     Returns (label_encoder, error_string_or_None).
     """
-    path = os.path.join(BASE_DIR, "label_encoder.pkl")
+    path = os.path.join(BASE_DIR, "artifacts", "label_encoder.pkl")
     if not os.path.exists(path):
-        return None, "label_encoder.pkl not found — class labels may appear as numbers"
+        return None, "label_encoder.pkl not found — place it in the artifacts/ folder"
     try:
         with open(path, "rb") as f:
             return pickle.load(f), None

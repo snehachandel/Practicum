@@ -10,7 +10,7 @@ from sklearn.tree import DecisionTreeClassifier
 def main():
     print("Loading dataset...")
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    dataset_path = os.path.join(script_dir, 'final_career_dataset.csv')
+    dataset_path = os.path.join(script_dir, '..', 'data', 'final_career_dataset.csv')
     df = pd.read_csv(dataset_path)
 
     # --- INJECT REALISM (NOISE) ---
