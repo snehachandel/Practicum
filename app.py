@@ -946,13 +946,18 @@ def quiz_to_features(answers: list[int], model) -> pd.DataFrame:
         "family_income": family_income,
     }
 
-    # Model Alignment Failsafe
+    # Model Alignment Failsafe — supports both sklearn (feature_names_in_)
+    # and LightGBM (feature_name_) attribute conventions.
     expected_cols = []
-    if model is not None and hasattr(model, "feature_names_in_"):
-        expected_cols = [str(c) for c in model.feature_names_in_]
+    if model is not None:
+        if hasattr(model, "feature_names_in_"):
+            expected_cols = [str(c) for c in model.feature_names_in_]
+        elif hasattr(model, "feature_name_"):
+            expected_cols = [str(c) for c in model.feature_name_]
 
     if not expected_cols:
-        expected_cols = list(base_row.keys()) + ["internet_access_no", "internet_access_yes"]
+        # Default: 22 features matching LightGBM Model 4 training format
+        expected_cols = list(base_row.keys()) + ["internet_access"]
 
     # Construct the final row matching model expectations
     row = {col: 0.0 for col in expected_cols}
